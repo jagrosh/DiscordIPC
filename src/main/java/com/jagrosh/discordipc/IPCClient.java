@@ -405,17 +405,17 @@ public final class IPCClient implements Closeable
                         switch(Subscription.of(json.getString("evt")))
                         {
                             case ACTIVITY_JOIN:
-                                LOGGER.debug("Reading thread received a 'join' command.");
+                                LOGGER.debug("Reading thread received a 'join' event.");
                                 listener.onActivityJoin(this, data.getString("secret"));
                                 break;
 
                             case ACTIVITY_SPECTATE:
-                                LOGGER.debug("Reading thread received a 'spectate' command.");
+                                LOGGER.debug("Reading thread received a 'spectate' event.");
                                 listener.onActivitySpectate(this, data.getString("secret"));
                                 break;
 
                             case ACTIVITY_JOIN_REQUEST:
-                                LOGGER.debug("Reading thread received a 'join request' command.");
+                                LOGGER.debug("Reading thread received a 'join request' event.");
                                 JSONObject u = data.getJSONObject("user");
                                 User user = new User(
                                     u.getString("username"),
@@ -525,7 +525,7 @@ public final class IPCClient implements Closeable
         return Integer.parseInt(pr.substring(0,pr.indexOf('@')));
     }
 
-    // a list of system property keys to get IPC file from different systems.
+    // a list of system property keys to get IPC file from different unix systems.
     private final static String[] paths = {"XDG_RUNTIME_DIR","TMPDIR","TMP","TEMP"};
 
     /**
