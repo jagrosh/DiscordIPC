@@ -16,20 +16,66 @@
 package com.jagrosh.discordipc.entities;
 
 /**
- * Discord builds
+ * Constants representing various Discord client builds,
+ * such as Stable, Canary, Public Test Build (PTB)
  */
 public enum DiscordBuild
 {
-    ANY, STABLE, PTB, CANARY;
+    /**
+     * Constant for the current Discord Canary release.
+     */
+    CANARY("//canary.discordapp.com/api"),
 
+    /**
+     * Constant for the current Discord Public Test Build or PTB release.
+     */
+    PTB("//ptb.discordapp.com/api"),
+
+    /**
+     * Constant for the current stable Discord release.
+     */
+    STABLE("//discordapp.com/api"),
+
+    /**
+     * 'Wildcard' build constant used in {@link com.jagrosh.discordipc.IPCClient#connect(DiscordBuild...)
+     * IPCClient#connect(DiscordBuild...)} to signify that the build to target is not important, and
+     * that the first valid build will be used.<p>
+     *
+     * Other than this exact function, there is no use for this value.
+     */
+    ANY;
+
+    private final String endpoint;
+
+    DiscordBuild(String endpoint)
+    {
+        this.endpoint = endpoint;
+    }
+
+    DiscordBuild()
+    {
+        this(null);
+    }
+
+    /**
+     * Gets a {@link DiscordBuild} matching the specified endpoint.<p>
+     *
+     * This is only internally implemented.
+     *
+     * @param endpoint The endpoint to get from.
+     *
+     * @return The DiscordBuild corresponding to the endpoint, or
+     *         {@link DiscordBuild#ANY} if none match.
+     */
     public static DiscordBuild from(String endpoint)
     {
-        switch(endpoint)
+        for(DiscordBuild value : values())
         {
-            case "//canary.discordapp.com/api": return CANARY;
-            case "//ptb.discordapp.com/api": return PTB;
-            case "//discordapp.com/api": return STABLE;
-            default: return ANY;
+            if(value.endpoint != null && value.endpoint.equals(endpoint))
+            {
+                return value;
+            }
         }
+        return ANY;
     }
 }
