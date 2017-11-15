@@ -307,7 +307,7 @@ public final class IPCClient implements Closeable
          * This is only present when the connection is healthy, stable,
          * and reading good data without exception.<br>
          * If the environment becomes out of line with these principles
-         * in any way, the IPCClient in question will become either
+         * in any way, the IPCClient in question will become
          * {@link Status#DISCONNECTED}.
          */
         CONNECTED,
