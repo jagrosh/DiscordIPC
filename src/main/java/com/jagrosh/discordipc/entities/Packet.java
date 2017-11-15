@@ -59,7 +59,7 @@ public class Packet
         return "Pkt:"+getOp()+getJson().toString();
     }
     
-    public static enum OpCode
+    public enum OpCode
     {
         HANDSHAKE, FRAME, CLOSE, PING, PONG
     }

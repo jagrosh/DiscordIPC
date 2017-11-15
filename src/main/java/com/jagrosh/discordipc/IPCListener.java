@@ -25,19 +25,19 @@ import org.json.JSONObject;
  */
 public interface IPCListener
 {
-    public default void onPacketSent(IPCClient client, Packet packet) {}
+    default void onPacketSent(IPCClient client, Packet packet) {}
     
-    public default void onPacketReceived(IPCClient client, Packet packet) {}
+    default void onPacketReceived(IPCClient client, Packet packet) {}
     
-    public default void onActivityJoin(IPCClient client, String secret) {}
+    default void onActivityJoin(IPCClient client, String secret) {}
     
-    public default void onActivitySpectate(IPCClient client, String secret) {}
+    default void onActivitySpectate(IPCClient client, String secret) {}
     
-    public default void onActivityJoinRequest(IPCClient client, String secret, User user) {}
+    default void onActivityJoinRequest(IPCClient client, String secret, User user) {}
     
-    public default void onReady(IPCClient client) {}
+    default void onReady(IPCClient client) {}
     
-    public default void onClose(IPCClient client, JSONObject json) {}
+    default void onClose(IPCClient client, JSONObject json) {}
     
-    public default void onDisconnect(IPCClient client, Throwable t) {}
+    default void onDisconnect(IPCClient client, Throwable t) {}
 }
