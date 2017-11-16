@@ -128,7 +128,9 @@ public final class IPCClient implements Closeable
         {
             try
             {
-                pipe = new RandomAccessFile(getIPC(i), "rw");
+                String ipc = getIPC(i);
+                LOGGER.debug(String.format("Searching for IPC: %s", ipc));
+                pipe = new RandomAccessFile(ipc, "rw");
 
                 send(OpCode.HANDSHAKE, new JSONObject().put("v",version).put("client_id", Long.toString(clientId)), null);
 
@@ -137,10 +139,13 @@ public final class IPCClient implements Closeable
                 build = DiscordBuild.from(p.getJson().getJSONObject("data")
                                            .getJSONObject("config")
                                            .getString("api_endpoint"));
-                
+
+                LOGGER.debug(String.format("Found a valid client (%s) with packet: %s", build.name(), p.toString()));
                 // we're done if we found our first choice
-                if(build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0])
+                if(build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0]) {
+                    LOGGER.info(String.format("Found preferred client: %s", build.name()));
                     break;
+                }
 
                 open[build.ordinal()] = pipe; // didn't find first choice yet, so store what we have
                 open[DiscordBuild.ANY.ordinal()] = pipe; // also store in 'any' for use later
@@ -155,13 +160,14 @@ public final class IPCClient implements Closeable
             }
         }
 
-        if(pipe==null)
+        if(pipe == null)
         {
-            // we already know we dont have our first pick
+            // we already know we don't have our first pick
             // check each of the rest to see if we have that
             for(int i = 1; i < preferredOrder.length; i++)
             {
                 DiscordBuild cb = preferredOrder[i];
+                LOGGER.debug(String.format("Looking for client build: %s", cb.name()));
                 if(open[cb.ordinal()] != null)
                 {
                     pipe = open[cb.ordinal()];
@@ -173,11 +179,13 @@ public final class IPCClient implements Closeable
                             if(open[k] == pipe)
                             {
                                 build = DiscordBuild.values()[k];
-                                open[k] = null; // we dont want to close this
+                                open[k] = null; // we don't want to close this
                             }
                         }
                     }
                     else build = cb;
+
+                    LOGGER.info(String.format("Found preferred client: %s", build.name()));
                     break;
                 }
             }
@@ -196,10 +204,15 @@ public final class IPCClient implements Closeable
             {
                 try {
                     open[i].close();
-                } catch(IOException ignored) {}
+                } catch(IOException ex) {
+                    // This isn't really important to applications and better
+                    // as debug info
+                    LOGGER.debug("Failed to close an open IPC Pipe!", ex);
+                }
             }
         }
         status = Status.CONNECTED;
+        LOGGER.debug("Client is now connected and ready!");
         if(listener != null)
             listener.onReady(this);
         startReading();
@@ -295,6 +308,7 @@ public final class IPCClient implements Closeable
         checkConnected(true);
         if(!sub.isSubscribable())
             throw new IllegalStateException("Cannot subscribe to "+sub+" event!");
+        LOGGER.debug(String.format("Subscribing to Event: %s", sub.name()));
         send(OpCode.FRAME, new JSONObject()
                             .put("cmd", "SUBSCRIBE")
                             .put("evt", sub.name()), callback);
@@ -322,6 +336,7 @@ public final class IPCClient implements Closeable
     public void close()
     {
         checkConnected(true);
+        LOGGER.debug("Closing IPC Pipe...");
         send(OpCode.CLOSE, new JSONObject(), null);
     }
 
@@ -339,7 +354,7 @@ public final class IPCClient implements Closeable
      *
      * @return The {@link DiscordBuild} of this IPCClient.
      */
-    public final DiscordBuild getDiscordBuild()
+    public DiscordBuild getDiscordBuild()
     {
         return build;
     }
@@ -362,11 +377,11 @@ public final class IPCClient implements Closeable
 
         /**
          * Status for when the IPCClient is attempting to connect.<p>
-         * 
+         *
          * This will become set whenever the #connect() method is called.
          */
         CONNECTING,
-        
+
         /**
          * Status for when the IPCClient is connected with Discord.<p>
          *
@@ -427,7 +442,7 @@ public final class IPCClient implements Closeable
         
         private final boolean subscribable;
         
-        private Event(boolean subscribable)
+        Event(boolean subscribable)
         {
             this.subscribable = subscribable;
         }
@@ -539,7 +554,7 @@ public final class IPCClient implements Closeable
                                     break;
                             }
                         }
-                        catch (Exception e)
+                        catch(Exception e)
                         {
                             LOGGER.error("Exception when handling event: ", e);
                         }
@@ -562,7 +577,7 @@ public final class IPCClient implements Closeable
             }
         });
 
-        LOGGER.info("Starting IPCClient reading thread!");
+        LOGGER.debug("Starting IPCClient reading thread!");
         readThread.start();
     }
     
@@ -582,11 +597,13 @@ public final class IPCClient implements Closeable
             if(callback!=null && !callback.isEmpty())
                 callbacks.put(nonce, callback);
             pipe.write(p.toBytes());
+            LOGGER.debug(String.format("Sent packet: %s", p.toString()));
             if(listener != null)
                 listener.onPacketSent(this, p);
         }
         catch(IOException ex)
         {
+            LOGGER.error("Encountered an IOException while sending a packet and disconnected!");
             status = Status.DISCONNECTED;
         }
     }
@@ -620,7 +637,7 @@ public final class IPCClient implements Closeable
 
         pipe.readFully(d);
         Packet p = new Packet(op, new JSONObject(new String(d)));
-
+        LOGGER.debug(String.format("Received packet: %s", p.toString()));
         if(listener != null)
             listener.onPacketReceived(this, p);
         return p;
