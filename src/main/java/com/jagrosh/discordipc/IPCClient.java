@@ -168,7 +168,10 @@ public final class IPCClient implements Closeable
                         for(int k = 1; k < open.length; k++)
                         {
                             if(open[k] == pipe)
+                            {
                                 build = DiscordBuild.values()[k];
+                                open[k] = null; // we dont want to close this
+                            }
                         }
                     }
                     else build = cb;
