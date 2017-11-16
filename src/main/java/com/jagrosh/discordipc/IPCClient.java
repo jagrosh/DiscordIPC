@@ -140,7 +140,7 @@ public final class IPCClient implements Closeable
                     break;
 
                 open[build.ordinal()] = pipe; // didn't find first choice yet, so store what we have
-                open[0] = pipe;               // also store in 'any' for use later
+                open[DiscordBuild.ANY.ordinal()] = pipe; // also store in 'any' for use later
 
                 build = null;
                 pipe = null;
@@ -179,8 +179,10 @@ public final class IPCClient implements Closeable
                 throw new NoDiscordClientException();
         }
         // close unused files, except skip 'any' because its always a duplicate
-        for(int i = 1; i < open.length; i++)
+        for(int i = 0; i < open.length; i++)
         {
+            if(i == DiscordBuild.ANY.ordinal())
+                continue;
             if(open[i] != null)
             {
                 try {
