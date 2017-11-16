@@ -115,9 +115,12 @@ public final class IPCClient implements Closeable
     public void connect(DiscordBuild... preferredOrder) throws NoDiscordClientException
     {
         checkConnected(false);
-        if(preferredOrder.length == 0)
+        this.status = Status.CONNECTING;
+        if(preferredOrder == null || preferredOrder.length == 0)
             preferredOrder = new DiscordBuild[]{DiscordBuild.ANY};
         callbacks.clear();
+        pipe = null;
+        build = null;
 
         // store some files so we can get the preferred client
         RandomAccessFile[] open = new RandomAccessFile[DiscordBuild.values().length];
@@ -134,7 +137,7 @@ public final class IPCClient implements Closeable
                 build = DiscordBuild.from(p.getJson().getJSONObject("data")
                                            .getJSONObject("config")
                                            .getString("api_endpoint"));
-
+                
                 // we're done if we found our first choice
                 if(build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0])
                     break;
@@ -165,7 +168,7 @@ public final class IPCClient implements Closeable
                     open[cb.ordinal()] = null;
                     if(cb == DiscordBuild.ANY) // if we pulled this from the 'any' slot, we need to figure out which build it was
                     {
-                        for(int k = 1; k < open.length; k++)
+                        for(int k = 0; k < open.length; k++)
                         {
                             if(open[k] == pipe)
                             {
@@ -179,7 +182,10 @@ public final class IPCClient implements Closeable
                 }
             }
             if(pipe == null)
+            {
+                this.status = Status.DISCONNECTED;
                 throw new NoDiscordClientException();
+            }
         }
         // close unused files, except skip 'any' because its always a duplicate
         for(int i = 0; i < open.length; i++)
@@ -242,12 +248,12 @@ public final class IPCClient implements Closeable
     public void sendRichPresence(RichPresence presence, Callback callback)
     {
         checkConnected(true);
-        LOGGER.debug("Sending RichPresence to discord: "+presence.toJson().toString());
+        LOGGER.debug("Sending RichPresence to discord: "+(presence == null ? null : presence.toJson().toString()));
         send(OpCode.FRAME, new JSONObject()
                             .put("cmd","SET_ACTIVITY")
                             .put("args", new JSONObject()
                                         .put("pid",getPID())
-                                        .put("activity",presence.toJson())), callback);
+                                        .put("activity",presence == null ? null : presence.toJson())), callback);
     }
 
     /**
@@ -355,6 +361,13 @@ public final class IPCClient implements Closeable
         CREATED,
 
         /**
+         * Status for when the IPCClient is attempting to connect.<p>
+         * 
+         * This will become set whenever the #connect() method is called.
+         */
+        CONNECTING,
+        
+        /**
          * Status for when the IPCClient is connected with Discord.<p>
          *
          * This is only present when the connection is healthy, stable,
@@ -390,7 +403,7 @@ public final class IPCClient implements Closeable
 
     /**
      * Constants representing events that can be subscribed to
-     * using {@link #subscribe(Subscription)}.<p>
+     * using {@link #subscribe(Event)}.<p>
      *
      * Each event corresponds to a different function as a
      * component of the Rich Presence.<br>
