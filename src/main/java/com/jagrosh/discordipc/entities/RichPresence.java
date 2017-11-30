@@ -86,18 +86,110 @@ public class RichPresence
                 .put("instance", instance);
     }
     
-    //const char* details; /* max 128 bytes */
-    //int64_t startTimestamp;
-    //int64_t endTimestamp;
-    //const char* largeImageKey;  /* max 32 bytes */
-    //const char* largeImageText; /* max 128 bytes */
-    //const char* smallImageKey;  /* max 32 bytes */
-    //const char* smallImageText; /* max 128 bytes */
-    //const char* partyId;        /* max 128 bytes */
-    //int partySize;
-    //int partyMax;
-    //const char* matchSecret;    /* max 128 bytes */
-    //const char* joinSecret;     /* max 128 bytes */
-    //const char* spectateSecret; /* max 128 bytes */
-    //int8_t instance;
+    public static class Builder
+    {
+        private String state;
+        private String details;
+        private OffsetDateTime startTimestamp;
+        private OffsetDateTime endTimestamp;
+        private String largeImageKey;
+        private String largeImageText;
+        private String smallImageKey;
+        private String smallImageText;
+        private String partyId;
+        private int partySize;
+        private int partyMax;
+        private String matchSecret;
+        private String joinSecret;
+        private String spectateSecret;
+        private boolean instance;
+        
+        public RichPresence build()
+        {
+            return new RichPresence(state, details, startTimestamp, endTimestamp, 
+                    largeImageKey, largeImageText, smallImageKey, smallImageText, 
+                    partyId, partySize, partyMax, matchSecret, joinSecret, 
+                    spectateSecret, instance);
+        }
+        
+        public Builder setState(String state)
+        {
+            this.state = state;
+            return this;
+        }
+        
+        public Builder setDetails(String details)
+        {
+            this.details = details;
+            return this;
+        }
+        
+        public Builder setStartTimestamp(OffsetDateTime startTimestamp)
+        {
+            this.startTimestamp = startTimestamp;
+            return this;
+        }
+        
+        public Builder setEndTimestamp(OffsetDateTime endTimestamp)
+        {
+            this.endTimestamp = endTimestamp;
+            return this;
+        }
+        
+        public Builder setLargeImage(String largeImageKey, String largeImageText)
+        {
+            this.largeImageKey = largeImageKey;
+            this.largeImageText = largeImageText;
+            return this;
+        }
+        
+        public Builder setLargeImage(String largeImageKey)
+        {
+            return setLargeImage(largeImageKey, null);
+        }
+        
+        public Builder setSmallImage(String smallImageKey, String smallImageText)
+        {
+            this.smallImageKey = smallImageKey;
+            this.smallImageText = smallImageText;
+            return this;
+        }
+        
+        public Builder setSmallImage(String smallImageKey)
+        {
+            return setSmallImage(smallImageKey, null);
+        }
+        
+        public Builder setParty(String partyId, int partySize, int partyMax)
+        {
+            this.partyId = partyId;
+            this.partySize = partySize;
+            this.partyMax = partyMax;
+            return this;
+        }
+        
+        public Builder setMatchSecret(String matchSecret)
+        {
+            this.matchSecret = matchSecret;
+            return this;
+        }
+        
+        public Builder setJoinSecret(String joinSecret)
+        {
+            this.joinSecret = joinSecret;
+            return this;
+        }
+        
+        public Builder setSpectateSecret(String spectateSecret)
+        {
+            this.spectateSecret = spectateSecret;
+            return this;
+        }
+        
+        public Builder setInstance(boolean instance)
+        {
+            this.instance = instance;
+            return this;
+        }
+    }
 }
