@@ -1,3 +1,10 @@
+[version]: https://api.bintray.com/packages/jagrosh/maven/Discord-IPC/images/download.svg
+[download]: https://bintray.com/jagrosh/maven/DiscordIPC/_latestVersion
+[license]: https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg
+
+[ ![version][] ][download]
+[ ![license][] ](https://github.com/jagrosh/Discord-IPC/tree/master/LICENSE)
+
 # DiscordIPC
 
 Connect locally to the Discord client using IPC for a subset of RPC features like Rich Presence and Activity Join/Spectate

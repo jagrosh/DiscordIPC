@@ -33,6 +33,10 @@ public class User
     /**
      * Constructs a new {@link User}.<br>
      * Only implemented internally.
+     * @param name user's name
+     * @param discriminator user's discrim
+     * @param id user's id
+     * @param avatar user's avatar hash, or {@code null} if they have no avatar
      */
     public User(String name, String discriminator, long id, String avatar)
     {
@@ -139,8 +143,7 @@ public class User
      *
      * While, at the time of writing this documentation, bots cannot
      * use Rich Presence features, there may be a time in the future
-     * where they have such an ability. <s>And we copy pasted this
-     * from JDA anyways, so why care.</s> :^)
+     * where they have such an ability.
      *
      * @return False
      */

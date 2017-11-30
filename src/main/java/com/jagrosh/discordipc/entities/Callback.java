@@ -82,7 +82,7 @@ public class Callback
      * failure {@link Consumer}.<br>
      * This is only true if the Callback is constructed with the parameter-less
      * constructor ({@link #Callback()}) or another constructor that leaves
-     * one or both parameters {@link null}.
+     * one or both parameters {@code null}.
      *
      * @return {@code true} if and only if the
      */

@@ -85,7 +85,7 @@ public final class IPCClient implements Closeable
      * Sets this IPCClient's {@link IPCListener} to handle received events.<p>
      *
      * A single IPCClient can only have one of these set at any given time.<br>
-     * Setting this {@link null} will remove the currently active one.<p>
+     * Setting this {@code null} will remove the currently active one.<p>
      *
      * This can be set safely before a call to {@link #connect(DiscordBuild...)}
      * is made.
