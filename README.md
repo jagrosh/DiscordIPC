@@ -18,6 +18,34 @@ Connect locally to the Discord client using IPC for a subset of RPC features lik
 - 100% Java
 
 
+# Getting Started
+
+First you'll need to add this project as a dependency. If you're using maven:
+```xml
+  <dependency>
+    <groupId>com.jagrosh</groupId>
+    <artifactId>DiscordIPC</artifactId>
+    <version>LATEST</version>
+  </dependency>
+```
+```xml
+  <repository>
+    <id>central</id>
+    <name>bintray</name>
+    <url>http://jcenter.bintray.com</url>
+  </repository>
+```
+With gradle:
+```groovy
+dependencies {
+    compile 'com.jagrosh:DiscordIPC:LATEST'
+}
+
+repositories {
+    jcenter()
+}
+```
+
 # Example
 
 Quick example, assuming you already have a GUI application
@@ -27,9 +55,17 @@ client.setListener(new IPCListener(){
     @Override
     public void onReady(IPCClient client)
     {
-        client.sendRichPresence(new RichPresence("West of House", "Frustration level: Over 9000",
-                OffsetDateTime.now(), null, "canary-large", null, "ptb-small", null, "party1234",
-                1, 6, "xyzzy", "join", "look", false));
+        RichPresence.Builder builder = new RichPresence.Builder();
+        builder.setState("West of House")
+            .setDetails("Frustration level: Over 9000")
+            .setStartTimestamp(OffsetDateTime.now())
+            .setLargeImage("canary-large", "Discord Canary")
+            .setSmallImage("ptb-small", "Discord PTB")
+            .setParty("party1234", 1, 6)
+            .setMatchSecret("xyzzy")
+            .setJoinSecret("join")
+            .setSpectateSecret("look");
+        client.sendRichPresence(builder.build());
     }
 });
 client.connect();
