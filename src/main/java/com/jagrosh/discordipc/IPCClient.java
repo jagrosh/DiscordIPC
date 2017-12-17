@@ -338,6 +338,7 @@ public final class IPCClient implements Closeable
         checkConnected(true);
         LOGGER.debug("Closing IPC Pipe...");
         send(OpCode.CLOSE, new JSONObject(), null);
+        status = Status.CLOSED;
     }
 
     /**
@@ -630,6 +631,9 @@ public final class IPCClient implements Closeable
 
         if(status==Status.DISCONNECTED)
             throw new IOException("Disconnected!");
+        
+        if(status==Status.CLOSED)
+            return new Packet(OpCode.CLOSE, null);
 
         OpCode op = OpCode.values()[Integer.reverseBytes(pipe.readInt())];
         int len = Integer.reverseBytes(pipe.readInt());

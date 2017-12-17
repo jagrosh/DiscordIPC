@@ -76,7 +76,7 @@ public class RichPresence
                         .put("large_text", largeImageText)
                         .put("small_image", smallImageKey)
                         .put("small_text", smallImageText))
-                .put("party", new JSONObject()
+                .put("party", partyId==null ? null : new JSONObject()
                         .put("id", partyId)
                         .put("size", new JSONArray().put(partySize).put(partyMax)))
                 .put("secrets", new JSONObject()
