@@ -53,13 +53,113 @@ public abstract class Pipe {
     public static Pipe openPipe(IPCClient ipcClient, long clientId, HashMap<String,Callback> callbacks,
                                 DiscordBuild... preferredOrder) throws NoDiscordClientException
     {
+
+        if(preferredOrder == null || preferredOrder.length == 0)
+            preferredOrder = new DiscordBuild[]{DiscordBuild.ANY};
+
+        WindowsPipe pipe = null;
+
+        // store some files so we can get the preferred client
+        WindowsPipe[] open = new WindowsPipe[DiscordBuild.values().length];
+        for(int i = 0; i < 10; i++)
+        {
+            try
+            {
+                String location = getPipeLocation(i);
+                LOGGER.debug(String.format("Searching for IPC: %s", location));
+                pipe = new WindowsPipe(ipcClient, clientId, callbacks, location);
+
+                pipe.send(Packet.OpCode.HANDSHAKE, new JSONObject().put("v", VERSION).put("client_id", Long.toString(clientId)), null);
+
+                Packet p = pipe.read(); // this is a valid client at this point
+
+                pipe.build = DiscordBuild.from(p.getJson().getJSONObject("data")
+                        .getJSONObject("config")
+                        .getString("api_endpoint"));
+
+                LOGGER.debug(String.format("Found a valid client (%s) with packet: %s", pipe.build.name(), p.toString()));
+                // we're done if we found our first choice
+                if(pipe.build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0]) {
+                    LOGGER.info(String.format("Found preferred client: %s", pipe.build.name()));
+                    break;
+                }
+
+                open[pipe.build.ordinal()] = pipe; // didn't find first choice yet, so store what we have
+                open[DiscordBuild.ANY.ordinal()] = pipe; // also store in 'any' for use later
+
+                pipe.build = null;
+                pipe = null;
+            }
+            catch(IOException | JSONException ex)
+            {
+                pipe = null;
+            }
+        }
+
+        if(pipe == null)
+        {
+            // we already know we don't have our first pick
+            // check each of the rest to see if we have that
+            for(int i = 1; i < preferredOrder.length; i++)
+            {
+                DiscordBuild cb = preferredOrder[i];
+                LOGGER.debug(String.format("Looking for client build: %s", cb.name()));
+                if(open[cb.ordinal()] != null)
+                {
+                    pipe = open[cb.ordinal()];
+                    open[cb.ordinal()] = null;
+                    if(cb == DiscordBuild.ANY) // if we pulled this from the 'any' slot, we need to figure out which build it was
+                    {
+                        for(int k = 0; k < open.length; k++)
+                        {
+                            if(open[k] == pipe)
+                            {
+                                pipe.build = DiscordBuild.values()[k];
+                                open[k] = null; // we don't want to close this
+                            }
+                        }
+                    }
+                    else pipe.build = cb;
+
+                    LOGGER.info(String.format("Found preferred client: %s", pipe.build.name()));
+                    break;
+                }
+            }
+            if(pipe == null)
+            {
+                throw new NoDiscordClientException();
+            }
+        }
+        // close unused files, except skip 'any' because its always a duplicate
+        for(int i = 0; i < open.length; i++)
+        {
+            if(i == DiscordBuild.ANY.ordinal())
+                continue;
+            if(open[i] != null)
+            {
+                try {
+                    open[i].close();
+                } catch(IOException ex) {
+                    // This isn't really important to applications and better
+                    // as debug info
+                    LOGGER.debug("Failed to close an open IPC pipe!", ex);
+                }
+            }
+        }
+
+        pipe.status = PipeStatus.CONNECTED;
+
+        return pipe;
+    }
+
+    private Pipe createPipe(IPCClient ipcClient, long clientId, HashMap<String, Callback> callbacks, String location) {
         if (PlatformUtil.isWindows())
         {
-            return WindowsPipe.openPipe(ipcClient, clientId, callbacks, preferredOrder);
+            return new WindowsPipe(ipcClient, clientId, callbacks, location);
         }
         else if (PlatformUtil.isUnix())
         {
-            return null; //TODO
+            return new UnixPipe(ipcClient, clientId, callbacks, location);
         }
         else
         {
@@ -132,15 +232,36 @@ public abstract class Pipe {
         this.listener = listener;
     }
 
-    public void close()
-    {
-        LOGGER.debug("Closing IPC pipe...");
-        send(Packet.OpCode.CLOSE, new JSONObject(), null);
-        status = PipeStatus.CLOSED;
-    }
+    public abstract void close() throws IOException;
 
     public DiscordBuild getDiscordBuild()
     {
         return build;
+    }
+
+    // a list of system property keys to get IPC file from different unix systems.
+    private final static String[] unixPaths = {"XDG_RUNTIME_DIR","TMPDIR","TMP","TEMP"};
+
+    /**
+     * Finds the IPC location in the current system.
+     *
+     * @param i Index to try getting the IPC at.
+     *
+     * @return The IPC location.
+     */
+    private static String getPipeLocation(int i)
+    {
+        if(System.getProperty("os.name").contains("Win"))
+            return "\\\\?\\pipe\\discord-ipc-"+i;
+        String tmppath = null;
+        for(String str : unixPaths)
+        {
+            tmppath = System.getenv(str);
+            if(tmppath != null)
+                break;
+        }
+        if(tmppath == null)
+            tmppath = "/tmp";
+        return tmppath+"/discord-ipc-"+i;
     }
 }

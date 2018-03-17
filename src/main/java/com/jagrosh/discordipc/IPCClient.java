@@ -20,17 +20,15 @@ import com.jagrosh.discordipc.entities.Packet.OpCode;
 import com.jagrosh.discordipc.entities.pipe.Pipe;
 import com.jagrosh.discordipc.entities.pipe.PipeStatus;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.lang.management.ManagementFactory;
-import java.util.HashMap;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.util.HashMap;
 
 /**
  * Represents a Discord IPC Client that can send and receive
@@ -243,7 +241,11 @@ public final class IPCClient implements Closeable
     public void close()
     {
         checkConnected(true);
-        pipe.close();
+        try {
+            pipe.close();
+        } catch (IOException e) {
+            LOGGER.debug("Failed to close pipe", e);
+        }
     }
 
     /**
@@ -444,7 +446,4 @@ public final class IPCClient implements Closeable
         String pr = ManagementFactory.getRuntimeMXBean().getName();
         return Integer.parseInt(pr.substring(0,pr.indexOf('@')));
     }
-
-    // a list of system property keys to get IPC file from different unix systems.
-    private final static String[] paths = {"XDG_RUNTIME_DIR","TMPDIR","TMP","TEMP"};
 }
