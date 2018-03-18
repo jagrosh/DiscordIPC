@@ -241,6 +241,7 @@ public final class IPCClient implements Closeable
     public void close()
     {
         checkConnected(true);
+
         try {
             pipe.close();
         } catch (IOException e) {

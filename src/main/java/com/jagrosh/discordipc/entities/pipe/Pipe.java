@@ -35,18 +35,16 @@ import java.util.UUID;
 public abstract class Pipe {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Pipe.class);
-    static final int VERSION = 1;
+    private static final int VERSION = 1;
     PipeStatus status = PipeStatus.CONNECTING;
     IPCListener listener;
-    DiscordBuild build;
+    private DiscordBuild build;
     final IPCClient ipcClient;
-    final long clientId;
-    final HashMap<String,Callback> callbacks;
+    private final HashMap<String,Callback> callbacks;
 
-    Pipe(IPCClient ipcClient, long clientId, HashMap<String, Callback> callbacks)
+    Pipe(IPCClient ipcClient, HashMap<String, Callback> callbacks)
     {
         this.ipcClient = ipcClient;
-        this.clientId = clientId;
         this.callbacks = callbacks;
     }
 
@@ -57,17 +55,17 @@ public abstract class Pipe {
         if(preferredOrder == null || preferredOrder.length == 0)
             preferredOrder = new DiscordBuild[]{DiscordBuild.ANY};
 
-        WindowsPipe pipe = null;
+        Pipe pipe = null;
 
         // store some files so we can get the preferred client
-        WindowsPipe[] open = new WindowsPipe[DiscordBuild.values().length];
+        Pipe[] open = new Pipe[DiscordBuild.values().length];
         for(int i = 0; i < 10; i++)
         {
             try
             {
                 String location = getPipeLocation(i);
                 LOGGER.debug(String.format("Searching for IPC: %s", location));
-                pipe = new WindowsPipe(ipcClient, clientId, callbacks, location);
+                pipe = createPipe(ipcClient, callbacks, location);
 
                 pipe.send(Packet.OpCode.HANDSHAKE, new JSONObject().put("v", VERSION).put("client_id", Long.toString(clientId)), null);
 
@@ -79,7 +77,8 @@ public abstract class Pipe {
 
                 LOGGER.debug(String.format("Found a valid client (%s) with packet: %s", pipe.build.name(), p.toString()));
                 // we're done if we found our first choice
-                if(pipe.build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0]) {
+                if(pipe.build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0])
+                {
                     LOGGER.info(String.format("Found preferred client: %s", pipe.build.name()));
                     break;
                 }
@@ -152,14 +151,20 @@ public abstract class Pipe {
         return pipe;
     }
 
-    private Pipe createPipe(IPCClient ipcClient, long clientId, HashMap<String, Callback> callbacks, String location) {
+    private static Pipe createPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, String location) {
         if (PlatformUtil.isWindows())
         {
-            return new WindowsPipe(ipcClient, clientId, callbacks, location);
+            return new WindowsPipe(ipcClient, callbacks, location);
         }
-        else if (PlatformUtil.isUnix())
+        else if (PlatformUtil.isUnix() || PlatformUtil.isMac())
         {
-            return new UnixPipe(ipcClient, clientId, callbacks, location);
+            try {
+                return new UnixPipe(ipcClient, callbacks, location);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
         else
         {
@@ -194,8 +199,6 @@ public abstract class Pipe {
         }
     }
 
-    public abstract void write(byte[] b) throws IOException;
-
     /**
      * Blocks until reading a {@link Packet} or until the
      * read thread encounters bad data.
@@ -209,6 +212,8 @@ public abstract class Pipe {
      */
     public abstract Packet read() throws IOException, JSONException;
 
+    public abstract void write(byte[] b) throws IOException;
+
     /**
      * Generates a nonce.
      *
@@ -219,11 +224,13 @@ public abstract class Pipe {
         return UUID.randomUUID().toString();
     }
 
-    public PipeStatus getStatus() {
+    public PipeStatus getStatus()
+    {
         return status;
     }
 
-    public void setStatus(PipeStatus status) {
+    public void setStatus(PipeStatus status)
+    {
         this.status = status;
     }
 
