@@ -22,7 +22,6 @@ import com.jagrosh.discordipc.entities.Callback;
 import com.jagrosh.discordipc.entities.DiscordBuild;
 import com.jagrosh.discordipc.entities.Packet;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
-import com.sun.javafx.PlatformUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -152,11 +151,13 @@ public abstract class Pipe {
     }
 
     private static Pipe createPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, String location) {
-        if (PlatformUtil.isWindows())
+        String osName = System.getProperty("os.name").toLowerCase();
+
+        if (osName.contains("win"))
         {
             return new WindowsPipe(ipcClient, callbacks, location);
         }
-        else if (PlatformUtil.isUnix() || PlatformUtil.isMac())
+        else if (osName.contains("linux") || osName.contains("mac"))
         {
             try {
                 return new UnixPipe(ipcClient, callbacks, location);
@@ -168,7 +169,7 @@ public abstract class Pipe {
         }
         else
         {
-            throw new RuntimeException("Unsupported OS: " + System.getProperty("os.name"));
+            throw new RuntimeException("Unsupported OS: " + osName);
         }
     }
 
