@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  */
 public class Callback
 {
-    private final Runnable success;
+    private final Consumer<Packet> success;
     private final Consumer<String> failure;
 
     /**
@@ -39,38 +39,26 @@ public class Callback
     }
 
     /**
-     * Constructs a Callback with a success {@link Runnable} that
+     * Constructs a Callback with a success {@link Consumer} that
      * occurs when the process it is attached to executes without
      * error.
      *
-     * @param success The Runnable to launch after a successful process.
+     * @param success The Consumer to launch after a successful process.
      */
-    public Callback(Runnable success)
+    public Callback(Consumer<Packet> success)
     {
         this(success, null);
     }
 
     /**
-     * Constructs a Callback with a failure {@link Consumer} that
-     * occurs when the process it is attached to encounters an error,
-     * and whose parameter is the error message.
-     *
-     * @param failure The Consumer to launch if the process has an error.
-     */
-    public Callback(Consumer<String> failure)
-    {
-        this(null, failure);
-    }
-
-    /**
-     * Constructs a Callback with a success {@link Runnable} <i>and</i>
+     * Constructs a Callback with a success {@link Consumer} <i>and</i>
      * a failure {@link Consumer} that occurs when the process it is
      * attached to executes without or with error (respectively).
      *
-     * @param success The Runnable to launch after a successful process.
+     * @param success The Consumer to launch after a successful process.
      * @param failure The Consumer to launch if the process has an error.
      */
-    public Callback(Runnable success, Consumer<String> failure)
+    public Callback(Consumer<Packet> success, Consumer<String> failure)
     {
         this.success = success;
         this.failure = failure;
@@ -78,7 +66,7 @@ public class Callback
 
     /**
      * Gets whether or not this Callback is "empty" which is more precisely
-     * defined as not having a specified success {@link Runnable} and/or a
+     * defined as not having a specified success {@link Consumer} and/or a
      * failure {@link Consumer}.<br>
      * This is only true if the Callback is constructed with the parameter-less
      * constructor ({@link #Callback()}) or another constructor that leaves
@@ -92,12 +80,12 @@ public class Callback
     }
 
     /**
-     * Launches the success {@link Runnable}.
+     * Launches the success {@link Consumer}.
      */
-    public void succeed()
+    public void succeed(Packet packet)
     {
         if(success != null)
-            success.run();
+            success.accept(packet);
     }
 
     /**

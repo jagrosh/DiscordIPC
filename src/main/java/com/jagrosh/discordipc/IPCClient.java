@@ -356,7 +356,7 @@ public final class IPCClient implements Closeable
                     {
                         case NULL:
                             if(nonce != null && callbacks.containsKey(nonce))
-                                callbacks.remove(nonce).succeed();
+                                callbacks.remove(nonce).succeed(p);
                             break;
                             
                         case ERROR:
