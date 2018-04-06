@@ -16,10 +16,6 @@ repositories {
     mavenCentral()
 }
 
-configurations {
-    nativeBinary
-}
-
 sourceSets {
     main {
         java {
