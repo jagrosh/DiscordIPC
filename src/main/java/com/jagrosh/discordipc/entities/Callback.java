@@ -35,7 +35,7 @@ public class Callback
      */
     public Callback()
     {
-        this(null, null);
+        this((Consumer<Packet>) null, null);
     }
 
     /**
@@ -62,6 +62,25 @@ public class Callback
     {
         this.success = success;
         this.failure = failure;
+    }
+
+    /**
+     * @param success The Runnable to launch after a successful process.
+     * @param failure The Consumer to launch if the process has an error.
+     */
+    @Deprecated
+    public Callback(Runnable success, Consumer<String> failure)
+    {
+        this(p -> success.run(), failure);
+    }
+
+    /**
+     * @param success The Runnable to launch after a successful process.
+     */
+    @Deprecated
+    public Callback(Runnable success)
+    {
+        this(p -> success.run(), null);
     }
 
     /**
