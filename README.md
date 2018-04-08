@@ -70,7 +70,9 @@ client.setListener(new IPCListener(){
 });
 client.connect();
 ```
-Additional examples will be available soon.
+
+### Other Examples
+* [Monster Hunter Gathering Hall App](https://github.com/MHGatheringHall/App) - App for displaying in-game info for a non-PC game series
 
 
 # Official Discord-RPC Bindings
