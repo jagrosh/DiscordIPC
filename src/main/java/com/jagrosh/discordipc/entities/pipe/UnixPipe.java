@@ -52,7 +52,7 @@ public class UnixPipe extends Pipe
     {
         InputStream is = socket.getInputStream();
 
-        while(is.available() == 0 && status == PipeStatus.CONNECTED)
+        while((status == PipeStatus.CONNECTED || status == PipeStatus.CLOSING)  && is.available() == 0)
         {
             try {
                 Thread.sleep(50);
@@ -97,6 +97,7 @@ public class UnixPipe extends Pipe
     public void close() throws IOException
     {
         LOGGER.debug("Closing IPC pipe...");
+        status = PipeStatus.CLOSING;
         send(Packet.OpCode.CLOSE, new JSONObject(), null);
         status = PipeStatus.CLOSED;
         socket.close();

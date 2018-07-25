@@ -53,6 +53,13 @@ public enum PipeStatus
     CONNECTED,
 
     /**
+     * Status for when the pipe status is beginning to close.
+     *
+     * The status that immediately follows is always {@link PipeStatus#CLOSED}
+     */
+    CLOSING,
+
+    /**
      * Status for when the Pipe has received an {@link Packet.OpCode#CLOSE}.<p>
      *
      * This signifies that the reading thread has safely and normally shut

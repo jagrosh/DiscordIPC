@@ -53,7 +53,10 @@ public class WindowsPipe extends Pipe
 
     @Override
     public Packet read() throws IOException, JSONException {
-        while(file.length() == 0 && status == PipeStatus.CONNECTED)
+        // Should check if we're connected before reading the file.
+        // When we don't do this, it results in an IOException because the
+        //read stream had closed for the RandomAccessFile#length() call.
+        while((status == PipeStatus.CONNECTED || status == PipeStatus.CLOSING) && file.length() == 0)
         {
             try {
                 Thread.sleep(50);
@@ -81,8 +84,9 @@ public class WindowsPipe extends Pipe
     @Override
     public void close() throws IOException {
         LOGGER.debug("Closing IPC pipe...");
+        status = PipeStatus.CLOSING; // start closing pipe
         send(Packet.OpCode.CLOSE, new JSONObject(), null);
-        status = PipeStatus.CLOSED;
+        status = PipeStatus.CLOSED; // finish closing pipe
         file.close();
     }
 
