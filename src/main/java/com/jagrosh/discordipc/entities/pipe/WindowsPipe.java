@@ -27,12 +27,10 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
 
-public class WindowsPipe extends Pipe
-{
+public class WindowsPipe extends Pipe {
     private final RandomAccessFile file;
 
-    WindowsPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, String location)
-    {
+    WindowsPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, String location) {
         super(ipcClient, callbacks);
         try {
             this.file = new RandomAccessFile(location, "rw");
@@ -51,17 +49,17 @@ public class WindowsPipe extends Pipe
         // Should check if we're connected before reading the file.
         // When we don't do this, it results in an IOException because the
         //read stream had closed for the RandomAccessFile#length() call.
-        while((status == PipeStatus.CONNECTED || status == PipeStatus.CLOSING) && file.length() == 0)
-        {
+        while ((status == PipeStatus.CONNECTED || status == PipeStatus.CLOSING) && file.length() == 0) {
             try {
                 Thread.sleep(50);
-            } catch(InterruptedException ignored) {}
+            } catch (InterruptedException ignored) {
+            }
         }
 
-        if(status==PipeStatus.DISCONNECTED)
+        if (status == PipeStatus.DISCONNECTED)
             throw new IOException("Disconnected!");
 
-        if(status==PipeStatus.CLOSED)
+        if (status == PipeStatus.CLOSED)
             return new Packet(Packet.OpCode.CLOSE, null);
 
         Packet.OpCode op = Packet.OpCode.values()[Integer.reverseBytes(file.readInt())];
@@ -71,7 +69,7 @@ public class WindowsPipe extends Pipe
         file.readFully(d);
         Packet p = new Packet(op, new JSONObject(new String(d)));
         System.out.println(String.format("Received packet: %s", p.toString()));
-        if(listener != null)
+        if (listener != null)
             listener.onPacketReceived(ipcClient, p);
         return p;
     }
