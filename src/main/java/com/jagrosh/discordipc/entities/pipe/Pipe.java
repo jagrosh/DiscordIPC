@@ -67,7 +67,7 @@ public abstract class Pipe {
                 Packet p = pipe.read(); // this is a valid client at this point
 
                 final JSONObject data = p.getJson().getJSONObject("data");
-                final JSONObject userData = p.getJson().getJSONObject("user");
+                final JSONObject userData = data.getJSONObject("user");
 
                 pipe.build = DiscordBuild.from(data
                         .getJSONObject("config")

@@ -409,7 +409,6 @@ public final class IPCClient implements Closeable {
         }, "IPCClient-Reader");
 
         System.out.println("Starting IPCClient reading thread!");
-        readThread.setDaemon(true);
         readThread.start();
     }
 
