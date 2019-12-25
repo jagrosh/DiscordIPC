@@ -74,7 +74,10 @@ public class UnixPipe extends Pipe {
 
         is.read(d);
         Packet p = new Packet(op, new JSONObject(new String(d)), ipcClient.getEncoding());
-        System.out.println(String.format("Received packet: %s", p.toString()));
+        if (ipcClient.isDebugMode()) {
+            System.out.println(String.format("Received packet: %s", p.toString()));
+        }
+
         if (listener != null)
             listener.onPacketReceived(ipcClient, p);
         return p;
@@ -87,7 +90,10 @@ public class UnixPipe extends Pipe {
 
     @Override
     public void close() throws IOException {
-        System.out.println("Closing IPC pipe...");
+        if (ipcClient.isDebugMode()) {
+            System.out.println("Closing IPC pipe...");
+        }
+
         status = PipeStatus.CLOSING;
         send(Packet.OpCode.CLOSE, new JSONObject(), null);
         status = PipeStatus.CLOSED;

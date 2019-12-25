@@ -59,7 +59,9 @@ public abstract class Pipe {
         for (int i = 0; i < 10; i++) {
             try {
                 String location = getPipeLocation(i);
-                System.out.println(String.format("Searching for IPC: %s", location));
+                if (ipcClient.isDebugMode()) {
+                    System.out.println(String.format("Searching for IPC: %s", location));
+                }
                 pipe = createPipe(ipcClient, callbacks, location);
 
                 pipe.send(Packet.OpCode.HANDSHAKE, new JSONObject().put("v", VERSION).put("client_id", Long.toString(clientId)), null);
@@ -80,12 +82,16 @@ public abstract class Pipe {
                         userData.has("avatar") ? userData.getString("avatar") : null
                 );
 
-                System.out.println(String.format("Found a valid client (%s) with packet: %s", pipe.build.name(), p.toString()));
-                System.out.println(String.format("Found a valid user (%s) with id: %s", pipe.currentUser.getName(), pipe.currentUser.getId()));
+                if (ipcClient.isDebugMode()) {
+                    System.out.println(String.format("Found a valid client (%s) with packet: %s", pipe.build.name(), p.toString()));
+                    System.out.println(String.format("Found a valid user (%s) with id: %s", pipe.currentUser.getName(), pipe.currentUser.getId()));
+                }
 
                 // we're done if we found our first choice
                 if (pipe.build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0]) {
-                    System.out.println(String.format("Found preferred client: %s", pipe.build.name()));
+                    if (ipcClient.isDebugMode()) {
+                        System.out.println(String.format("Found preferred client: %s", pipe.build.name()));
+                    }
                     break;
                 }
 
@@ -104,7 +110,10 @@ public abstract class Pipe {
             // check each of the rest to see if we have that
             for (int i = 1; i < preferredOrder.length; i++) {
                 DiscordBuild cb = preferredOrder[i];
-                System.out.println(String.format("Looking for client build: %s", cb.name()));
+                if (ipcClient.isDebugMode()) {
+                    System.out.println(String.format("Looking for client build: %s", cb.name()));
+                }
+
                 if (open[cb.ordinal()] != null) {
                     pipe = open[cb.ordinal()];
                     open[cb.ordinal()] = null;
@@ -118,7 +127,9 @@ public abstract class Pipe {
                         }
                     } else pipe.build = cb;
 
-                    System.out.println(String.format("Found preferred client: %s", pipe.build.name()));
+                    if (ipcClient.isDebugMode()) {
+                        System.out.println(String.format("Found preferred client: %s", pipe.build.name()));
+                    }
                     break;
                 }
             }
@@ -136,7 +147,9 @@ public abstract class Pipe {
                 } catch (IOException ex) {
                     // This isn't really important to applications and better
                     // as debug info
-                    System.out.println(String.format("Failed to close an open IPC pipe: %s", ex));
+                    if (ipcClient.isDebugMode()) {
+                        System.out.println(String.format("Failed to close an open IPC pipe: %s", ex));
+                    }
                 }
             }
         }
@@ -205,7 +218,10 @@ public abstract class Pipe {
             if (callback != null && !callback.isEmpty())
                 callbacks.put(nonce, callback);
             write(p.toBytes());
-            System.out.println(String.format("Sent packet: %s", p.toString()));
+            if (ipcClient.isDebugMode()) {
+                System.out.println(String.format("Sent packet: %s", p.toString()));
+            }
+
             if (listener != null)
                 listener.onPacketSent(ipcClient, p);
         } catch (IOException ex) {

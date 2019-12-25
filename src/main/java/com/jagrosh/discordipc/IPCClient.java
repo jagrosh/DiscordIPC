@@ -53,6 +53,7 @@ import java.util.HashMap;
  */
 public final class IPCClient implements Closeable {
     private final long clientId;
+    private final boolean debugMode;
     private final HashMap<String, Callback> callbacks = new HashMap<>();
     private volatile Pipe pipe;
     private IPCListener listener = null;
@@ -68,6 +69,20 @@ public final class IPCClient implements Closeable {
      */
     public IPCClient(long clientId) {
         this.clientId = clientId;
+        this.debugMode = false;
+    }
+
+    /**
+     * Constructs a new IPCClient using the provided {@code clientId}.<br>
+     * This is initially unconnected to Discord.
+     *
+     * @param clientId The Rich Presence application's client ID, which can be found
+     *                 <a href=https://discordapp.com/developers/applications/me>here</a>
+     * @param debugMode Whether Debug Logging should be shown for this client
+     */
+    public IPCClient(long clientId, boolean debugMode) {
+        this.clientId = clientId;
+        this.debugMode = debugMode;
     }
 
     /**
@@ -123,6 +138,25 @@ public final class IPCClient implements Closeable {
     }
 
     /**
+     * Gets the client ID associated with this IPCClient
+     *
+     * @return the client id
+     */
+    public long getClientID() {
+        return this.clientId;
+    }
+
+    /**
+     * Gets whether this IPCClient is in Debug Mode
+     * Default: False
+     *
+     * @return The Debug Mode Status
+     */
+    public boolean isDebugMode() {
+        return debugMode;
+    }
+
+    /**
      * Opens the connection between the IPCClient and Discord.<p>
      *
      * <b>This must be called before any data is exchanged between the
@@ -139,7 +173,10 @@ public final class IPCClient implements Closeable {
 
         pipe = Pipe.openPipe(this, clientId, callbacks, preferredOrder);
 
-        System.out.println("Client is now connected and ready!");
+        if (debugMode) {
+            System.out.println("Client is now connected and ready!");
+        }
+
         if (listener != null)
             listener.onReady(this);
         startReading();
@@ -180,7 +217,11 @@ public final class IPCClient implements Closeable {
      */
     public void sendRichPresence(RichPresence presence, Callback callback) {
         checkConnected(true);
-        System.out.println("Sending RichPresence to discord: " + (presence == null ? null : presence.toJson().toString()));
+
+        if (debugMode) {
+            System.out.println("Sending RichPresence to discord: " + (presence == null ? null : presence.toJson().toString()));
+        }
+
         pipe.send(OpCode.FRAME, new JSONObject()
                 .put("cmd", "SET_ACTIVITY")
                 .put("args", new JSONObject()
@@ -221,7 +262,11 @@ public final class IPCClient implements Closeable {
         checkConnected(true);
         if (!sub.isSubscribable())
             throw new IllegalStateException("Cannot subscribe to " + sub + " event!");
-        System.out.println(String.format("Subscribing to Event: %s", sub.name()));
+
+        if (debugMode) {
+            System.out.println(String.format("Subscribing to Event: %s", sub.name()));
+        }
+
         pipe.send(OpCode.FRAME, new JSONObject()
                 .put("cmd", "SUBSCRIBE")
                 .put("evt", sub.name()), callback);
@@ -231,7 +276,9 @@ public final class IPCClient implements Closeable {
         checkConnected(true);
 
         if (user != null) {
-            System.out.println(String.format("Sending response to %s as %s", user.getName(), approvalMode.name()));
+            if (debugMode) {
+                System.out.println(String.format("Sending response to %s as %s", user.getName(), approvalMode.name()));
+            }
 
             pipe.send(OpCode.FRAME, new JSONObject()
                     .put("cmd", approvalMode == ApprovalMode.ACCEPT ? "SEND_ACTIVITY_JOIN_INVITE" : "CLOSE_ACTIVITY_REQUEST")
@@ -266,7 +313,9 @@ public final class IPCClient implements Closeable {
         try {
             pipe.close();
         } catch (IOException e) {
-            System.out.println(String.format("Failed to close pipe: %s", e));
+            if (debugMode) {
+                System.out.println(String.format("Failed to close pipe: %s", e));
+            }
         }
     }
 
@@ -349,20 +398,28 @@ public final class IPCClient implements Closeable {
                             break;
 
                         case ACTIVITY_JOIN:
-                            System.out.println("Reading thread received a 'join' event.");
+                            if (debugMode) {
+                                System.out.println("Reading thread received a 'join' event.");
+                            }
                             break;
 
                         case ACTIVITY_SPECTATE:
-                            System.out.println("Reading thread received a 'spectate' event.");
+                            if (debugMode) {
+                                System.out.println("Reading thread received a 'spectate' event.");
+                            }
                             break;
 
                         case ACTIVITY_JOIN_REQUEST:
-                            System.out.println("Reading thread received a 'join request' event.");
+                            if (debugMode) {
+                                System.out.println("Reading thread received a 'join request' event.");
+                            }
                             break;
 
                         case UNKNOWN:
-                            System.out.println("Reading thread encountered an event with an unknown type: " +
-                                    json.getString("evt"));
+                            if (debugMode) {
+                                System.out.println("Reading thread encountered an event with an unknown type: " +
+                                        json.getString("evt"));
+                            }
                             break;
                     }
                     if (listener != null && json.has("cmd") && json.getString("cmd").equals("DISPATCH")) {
@@ -408,7 +465,9 @@ public final class IPCClient implements Closeable {
             }
         }, "IPCClient-Reader");
 
-        System.out.println("Starting IPCClient reading thread!");
+        if (debugMode) {
+            System.out.println("Starting IPCClient reading thread!");
+        }
         readThread.start();
     }
 
