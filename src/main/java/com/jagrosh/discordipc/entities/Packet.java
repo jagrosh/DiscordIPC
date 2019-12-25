@@ -17,6 +17,7 @@ package com.jagrosh.discordipc.entities;
 
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 /**
@@ -28,6 +29,20 @@ import java.nio.ByteBuffer;
 public class Packet {
     private final OpCode op;
     private final JSONObject data;
+    private final String encoding;
+
+    /**
+     * Constructs a new Packet using an {@link OpCode} and {@link JSONObject}.
+     *
+     * @param op       The OpCode value of this new Packet.
+     * @param data     The JSONObject payload of this new Packet.
+     * @param encoding encoding to send packets as
+     */
+    public Packet(OpCode op, JSONObject data, String encoding) {
+        this.op = op;
+        this.data = data;
+        this.encoding = encoding;
+    }
 
     /**
      * Constructs a new Packet using an {@link OpCode} and {@link JSONObject}.
@@ -35,9 +50,9 @@ public class Packet {
      * @param op   The OpCode value of this new Packet.
      * @param data The JSONObject payload of this new Packet.
      */
+    @Deprecated
     public Packet(OpCode op, JSONObject data) {
-        this.op = op;
-        this.data = data;
+        this(op, data, "UTF-8");
     }
 
     /**
@@ -46,7 +61,15 @@ public class Packet {
      * @return This Packet as a {@code byte} array.
      */
     public byte[] toBytes() {
-        byte[] d = data.toString().getBytes();
+        String s = data.toString();
+
+        byte[] d;
+        try {
+            d = s.getBytes(encoding);
+        } catch (UnsupportedEncodingException e) {
+            d = s.getBytes();
+        }
+
         ByteBuffer packet = ByteBuffer.allocate(d.length + 2 * Integer.BYTES);
         packet.putInt(Integer.reverseBytes(op.ordinal()));
         packet.putInt(Integer.reverseBytes(d.length));

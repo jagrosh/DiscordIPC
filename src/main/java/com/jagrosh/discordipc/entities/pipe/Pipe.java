@@ -21,6 +21,7 @@ import com.jagrosh.discordipc.IPCListener;
 import com.jagrosh.discordipc.entities.Callback;
 import com.jagrosh.discordipc.entities.DiscordBuild;
 import com.jagrosh.discordipc.entities.Packet;
+import com.jagrosh.discordipc.entities.User;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -38,6 +39,7 @@ public abstract class Pipe {
     PipeStatus status = PipeStatus.CONNECTING;
     IPCListener listener;
     private DiscordBuild build;
+    private User currentUser;
 
     Pipe(IPCClient ipcClient, HashMap<String, Callback> callbacks) {
         this.ipcClient = ipcClient;
@@ -64,11 +66,23 @@ public abstract class Pipe {
 
                 Packet p = pipe.read(); // this is a valid client at this point
 
-                pipe.build = DiscordBuild.from(p.getJson().getJSONObject("data")
+                final JSONObject data = p.getJson().getJSONObject("data");
+                final JSONObject userData = p.getJson().getJSONObject("user");
+
+                pipe.build = DiscordBuild.from(data
                         .getJSONObject("config")
                         .getString("api_endpoint"));
 
+                pipe.currentUser = new User(
+                        userData.getString("username"),
+                        userData.getString("discriminator"),
+                        Long.parseLong(userData.getString("id")),
+                        userData.has("avatar") ? userData.getString("avatar") : null
+                );
+
                 System.out.println(String.format("Found a valid client (%s) with packet: %s", pipe.build.name(), p.toString()));
+                System.out.println(String.format("Found a valid user (%s) with id: %s", pipe.currentUser.getName(), pipe.currentUser.getId()));
+
                 // we're done if we found our first choice
                 if (pipe.build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0]) {
                     System.out.println(String.format("Found preferred client: %s", pipe.build.name()));
@@ -187,7 +201,7 @@ public abstract class Pipe {
     public void send(Packet.OpCode op, JSONObject data, Callback callback) {
         try {
             String nonce = generateNonce();
-            Packet p = new Packet(op, data.put("nonce", nonce));
+            Packet p = new Packet(op, data.put("nonce", nonce), ipcClient.getEncoding());
             if (callback != null && !callback.isEmpty())
                 callbacks.put(nonce, callback);
             write(p.toBytes());
@@ -228,5 +242,9 @@ public abstract class Pipe {
 
     public DiscordBuild getDiscordBuild() {
         return build;
+    }
+
+    public User getCurrentUser() {
+        return currentUser;
     }
 }

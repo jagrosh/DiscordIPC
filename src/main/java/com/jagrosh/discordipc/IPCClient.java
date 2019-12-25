@@ -57,6 +57,7 @@ public final class IPCClient implements Closeable {
     private volatile Pipe pipe;
     private IPCListener listener = null;
     private Thread readThread = null;
+    private String encoding = "UTF-8";
 
     /**
      * Constructs a new IPCClient using the provided {@code clientId}.<br>
@@ -95,6 +96,30 @@ public final class IPCClient implements Closeable {
         this.listener = listener;
         if (pipe != null)
             pipe.setListener(listener);
+    }
+
+    /**
+     * Sets the encoding to send packets in.<p>
+     * <p>
+     * This can be set safely before a call to {@link #connect(DiscordBuild...)}
+     * is made.<p>
+     * <p>
+     * Default: UTF-8
+     *
+     * @param encoding for this IPCClient.
+     */
+    public void setEncoding(final String encoding) {
+        this.encoding = encoding;
+    }
+
+    /**
+     * Gets encoding to send packets in.<p>
+     * Default: UTF-8
+     *
+     * @return encoding
+     */
+    public String getEncoding() {
+        return this.encoding;
     }
 
     /**
@@ -202,6 +227,20 @@ public final class IPCClient implements Closeable {
                 .put("evt", sub.name()), callback);
     }
 
+    public void respondToJoinRequest(User user, ApprovalMode approvalMode, Callback callback) {
+        checkConnected(true);
+
+        if (user != null) {
+            System.out.println(String.format("Sending response to %s as %s", user.getName(), approvalMode.name()));
+
+            pipe.send(OpCode.FRAME, new JSONObject()
+                    .put("cmd", approvalMode == ApprovalMode.ACCEPT ? "SEND_ACTIVITY_JOIN_INVITE" : "CLOSE_ACTIVITY_REQUEST")
+                    .put("args", new JSONObject()
+                            .put("user_id", user.getId())), callback);
+        }
+    }
+
+
     /**
      * Gets the IPCClient's current {@link PipeStatus}.
      *
@@ -251,6 +290,22 @@ public final class IPCClient implements Closeable {
         return pipe.getDiscordBuild();
     }
 
+    /**
+     * Gets the IPCClient's current {@link User} attached to the target {@link DiscordBuild}.
+     * <p>
+     * This is always the User Data attached to the DiscordBuild found when
+     * making a call to {@link #connect(DiscordBuild...)}
+     * <p>
+     * Note that this value should NOT return null under any circumstances.
+     *
+     * @return The current {@link User} of this IPCClient from the target {@link DiscordBuild}, or null if not found.
+     */
+    public User getCurrentUser() {
+        if (pipe == null) return null;
+
+        return pipe.getCurrentUser();
+    }
+
 
     // Private methods
 
@@ -273,6 +328,8 @@ public final class IPCClient implements Closeable {
      * and calls the first {@link Pipe#read()}.
      */
     private void startReading() {
+        final IPCClient localInstance = this;
+
         readThread = new Thread(() -> {
             try {
                 Packet p;
@@ -313,11 +370,11 @@ public final class IPCClient implements Closeable {
                             JSONObject data = json.getJSONObject("data");
                             switch (Event.of(json.getString("evt"))) {
                                 case ACTIVITY_JOIN:
-                                    listener.onActivityJoin(this, data.getString("secret"));
+                                    listener.onActivityJoin(localInstance, data.getString("secret"));
                                     break;
 
                                 case ACTIVITY_SPECTATE:
-                                    listener.onActivitySpectate(this, data.getString("secret"));
+                                    listener.onActivitySpectate(localInstance, data.getString("secret"));
                                     break;
 
                                 case ACTIVITY_JOIN_REQUEST:
@@ -328,7 +385,7 @@ public final class IPCClient implements Closeable {
                                             Long.parseLong(u.getString("id")),
                                             u.optString("avatar", null)
                                     );
-                                    listener.onActivityJoinRequest(this, data.optString("secret", null), user);
+                                    listener.onActivityJoinRequest(localInstance, data.optString("secret", null), user);
                                     break;
                             }
                         } catch (Exception e) {
@@ -338,7 +395,7 @@ public final class IPCClient implements Closeable {
                 }
                 pipe.setStatus(PipeStatus.DISCONNECTED);
                 if (listener != null)
-                    listener.onClose(this, p.getJson());
+                    listener.onClose(localInstance, p.getJson());
             } catch (IOException | JSONException ex) {
                 if (ex instanceof IOException)
                     System.out.println(String.format("Reading thread encountered an IOException: %s", ex));
@@ -347,15 +404,23 @@ public final class IPCClient implements Closeable {
 
                 pipe.setStatus(PipeStatus.DISCONNECTED);
                 if (listener != null)
-                    listener.onDisconnect(this, ex);
+                    listener.onDisconnect(localInstance, ex);
             }
-        });
+        }, "IPCClient-Reader");
 
         System.out.println("Starting IPCClient reading thread!");
+        readThread.setDaemon(true);
         readThread.start();
     }
 
     // Private static methods
+
+    /**
+     * Constants representing a Response to an Ask to Join or Spectate Request
+     */
+    public enum ApprovalMode {
+        ACCEPT, DENY
+    }
 
     /**
      * Constants representing events that can be subscribed to
