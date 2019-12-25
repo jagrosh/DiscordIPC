@@ -9,7 +9,7 @@ public class Main {
 
     public static void main(String[] args) throws NoDiscordClientException {
         System.out.println("Booting RPC...");
-        IPCClient client = new IPCClient(659083077968199710L);
+        IPCClient client = new IPCClient(659083077968199710L, true);
         client.setListener(new IPCListener() {
             @Override
             public void onReady(IPCClient client) {
