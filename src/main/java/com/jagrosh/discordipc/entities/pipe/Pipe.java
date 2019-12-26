@@ -64,42 +64,44 @@ public abstract class Pipe {
                 }
                 pipe = createPipe(ipcClient, callbacks, location);
 
-                pipe.send(Packet.OpCode.HANDSHAKE, new JSONObject().put("v", VERSION).put("client_id", Long.toString(clientId)), null);
+                if (pipe != null) {
+                    pipe.send(Packet.OpCode.HANDSHAKE, new JSONObject().put("v", VERSION).put("client_id", Long.toString(clientId)), null);
 
-                Packet p = pipe.read(); // this is a valid client at this point
+                    Packet p = pipe.read(); // this is a valid client at this point
 
-                final JSONObject data = p.getJson().getJSONObject("data");
-                final JSONObject userData = data.getJSONObject("user");
+                    final JSONObject data = p.getJson().getJSONObject("data");
+                    final JSONObject userData = data.getJSONObject("user");
 
-                pipe.build = DiscordBuild.from(data
-                        .getJSONObject("config")
-                        .getString("api_endpoint"));
+                    pipe.build = DiscordBuild.from(data
+                            .getJSONObject("config")
+                            .getString("api_endpoint"));
 
-                pipe.currentUser = new User(
-                        userData.getString("username"),
-                        userData.getString("discriminator"),
-                        Long.parseLong(userData.getString("id")),
-                        userData.has("avatar") ? userData.getString("avatar") : null
-                );
+                    pipe.currentUser = new User(
+                            userData.getString("username"),
+                            userData.getString("discriminator"),
+                            Long.parseLong(userData.getString("id")),
+                            userData.has("avatar") ? userData.getString("avatar") : null
+                    );
 
-                if (ipcClient.isDebugMode()) {
-                    System.out.println(String.format("Found a valid client (%s) with packet: %s", pipe.build.name(), p.toString()));
-                    System.out.println(String.format("Found a valid user (%s) with id: %s", pipe.currentUser.getName(), pipe.currentUser.getId()));
-                }
-
-                // we're done if we found our first choice
-                if (pipe.build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0]) {
                     if (ipcClient.isDebugMode()) {
-                        System.out.println(String.format("Found preferred client: %s", pipe.build.name()));
+                        System.out.println(String.format("Found a valid client (%s) with packet: %s", pipe.build.name(), p.toString()));
+                        System.out.println(String.format("Found a valid user (%s) with id: %s", pipe.currentUser.getName(), pipe.currentUser.getId()));
                     }
-                    break;
+
+                    // we're done if we found our first choice
+                    if (pipe.build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0]) {
+                        if (ipcClient.isDebugMode()) {
+                            System.out.println(String.format("Found preferred client: %s", pipe.build.name()));
+                        }
+                        break;
+                    }
+
+                    open[pipe.build.ordinal()] = pipe; // didn't find first choice yet, so store what we have
+                    open[DiscordBuild.ANY.ordinal()] = pipe; // also store in 'any' for use later
+
+                    pipe.build = null;
+                    pipe = null;
                 }
-
-                open[pipe.build.ordinal()] = pipe; // didn't find first choice yet, so store what we have
-                open[DiscordBuild.ANY.ordinal()] = pipe; // also store in 'any' for use later
-
-                pipe.build = null;
-                pipe = null;
             } catch (IOException | JSONException ex) {
                 pipe = null;
             }
@@ -163,7 +165,8 @@ public abstract class Pipe {
         String osName = System.getProperty("os.name").toLowerCase();
 
         if (osName.contains("win")) {
-            return new WindowsPipe(ipcClient, callbacks, location);
+            WindowsPipe attemptedPipe = new WindowsPipe(ipcClient, callbacks, location);
+            return attemptedPipe.file != null ? attemptedPipe : null;
         } else if (osName.contains("linux") || osName.contains("mac")) {
             try {
                 return new UnixPipe(ipcClient, callbacks, location);

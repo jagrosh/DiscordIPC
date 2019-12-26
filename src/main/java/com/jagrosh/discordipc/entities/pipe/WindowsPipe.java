@@ -28,14 +28,14 @@ import java.io.RandomAccessFile;
 import java.util.HashMap;
 
 public class WindowsPipe extends Pipe {
-    private final RandomAccessFile file;
+    public RandomAccessFile file;
 
     WindowsPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, String location) {
         super(ipcClient, callbacks);
         try {
             this.file = new RandomAccessFile(location, "rw");
         } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+            this.file = null;
         }
     }
 
