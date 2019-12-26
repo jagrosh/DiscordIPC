@@ -16,11 +16,11 @@
 
 package com.jagrosh.discordipc.entities.pipe;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.jagrosh.discordipc.IPCClient;
 import com.jagrosh.discordipc.entities.Callback;
 import com.jagrosh.discordipc.entities.Packet;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.newsclub.net.unix.AFUNIXSocket;
 import org.newsclub.net.unix.AFUNIXSocketAddress;
 
@@ -40,9 +40,8 @@ public class UnixPipe extends Pipe {
         socket.connect(new AFUNIXSocketAddress(new File(location)));
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
-    public Packet read() throws IOException, JSONException {
+    public Packet read() throws IOException, JsonParseException {
         InputStream is = socket.getInputStream();
 
         while ((status == PipeStatus.CONNECTED || status == PipeStatus.CLOSING) && is.available() == 0) {
@@ -52,12 +51,6 @@ public class UnixPipe extends Pipe {
             }
         }
 
-        /*byte[] buf = new byte[is.available()];
-        is.read(buf, 0, buf.length);
-        LOGGER.info(new String(buf));
-
-        if (true) return null;*/
-
         if (status == PipeStatus.DISCONNECTED)
             throw new IOException("Disconnected!");
 
@@ -66,14 +59,26 @@ public class UnixPipe extends Pipe {
 
         // Read the op and length. Both are signed ints
         byte[] d = new byte[8];
-        is.read(d);
+        int readResult = is.read(d);
         ByteBuffer bb = ByteBuffer.wrap(d);
+
+        if (ipcClient.isDebugMode()) {
+            System.out.println(String.format("Read Byte Data: %s with result %s", new String(d), readResult));
+        }
 
         Packet.OpCode op = Packet.OpCode.values()[Integer.reverseBytes(bb.getInt())];
         d = new byte[Integer.reverseBytes(bb.getInt())];
 
-        is.read(d);
-        Packet p = new Packet(op, new JSONObject(new String(d)), ipcClient.getEncoding());
+        int reversedResult = is.read(d);
+
+        if (ipcClient.isDebugMode()) {
+            System.out.println(String.format("Read Reversed Byte Data: %s with result %s", new String(d), reversedResult));
+        }
+
+        JsonObject packetData = new JsonObject();
+        packetData.addProperty("", new String(d));
+        Packet p = new Packet(op, packetData, ipcClient.getEncoding());
+
         if (ipcClient.isDebugMode()) {
             System.out.println(String.format("Received packet: %s", p.toString()));
         }
@@ -95,7 +100,7 @@ public class UnixPipe extends Pipe {
         }
 
         status = PipeStatus.CLOSING;
-        send(Packet.OpCode.CLOSE, new JSONObject(), null);
+        send(Packet.OpCode.CLOSE, new JsonObject(), null);
         status = PipeStatus.CLOSED;
         socket.close();
     }

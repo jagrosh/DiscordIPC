@@ -15,7 +15,7 @@
  */
 package com.jagrosh.discordipc.entities;
 
-import org.json.JSONObject;
+import com.google.gson.JsonObject;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -28,30 +28,30 @@ import java.nio.ByteBuffer;
  */
 public class Packet {
     private final OpCode op;
-    private final JSONObject data;
+    private final JsonObject data;
     private final String encoding;
 
     /**
-     * Constructs a new Packet using an {@link OpCode} and {@link JSONObject}.
+     * Constructs a new Packet using an {@link OpCode} and {@link JsonObject}.
      *
      * @param op       The OpCode value of this new Packet.
      * @param data     The JSONObject payload of this new Packet.
      * @param encoding encoding to send packets as
      */
-    public Packet(OpCode op, JSONObject data, String encoding) {
+    public Packet(OpCode op, JsonObject data, String encoding) {
         this.op = op;
         this.data = data;
         this.encoding = encoding;
     }
 
     /**
-     * Constructs a new Packet using an {@link OpCode} and {@link JSONObject}.
+     * Constructs a new Packet using an {@link OpCode} and {@link JsonObject}.
      *
      * @param op   The OpCode value of this new Packet.
      * @param data The JSONObject payload of this new Packet.
      */
     @Deprecated
-    public Packet(OpCode op, JSONObject data) {
+    public Packet(OpCode op, JsonObject data) {
         this(op, data, "UTF-8");
     }
 
@@ -87,11 +87,11 @@ public class Packet {
     }
 
     /**
-     * Gets the {@link JSONObject} value as a part of this {@link Packet}.
+     * Gets the {@link JsonObject} value as a part of this {@link Packet}.
      *
      * @return The JSONObject value of this Packet.
      */
-    public JSONObject getJson() {
+    public JsonObject getJson() {
         return data;
     }
 

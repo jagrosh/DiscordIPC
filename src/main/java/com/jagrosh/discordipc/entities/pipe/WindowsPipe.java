@@ -16,11 +16,11 @@
 
 package com.jagrosh.discordipc.entities.pipe;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.jagrosh.discordipc.IPCClient;
 import com.jagrosh.discordipc.entities.Callback;
 import com.jagrosh.discordipc.entities.Packet;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -45,7 +45,7 @@ public class WindowsPipe extends Pipe {
     }
 
     @Override
-    public Packet read() throws IOException, JSONException {
+    public Packet read() throws IOException, JsonParseException {
         while ((status == PipeStatus.CONNECTED || status == PipeStatus.CLOSING) && file.length() == 0) {
             try {
                 Thread.sleep(50);
@@ -64,7 +64,11 @@ public class WindowsPipe extends Pipe {
         byte[] d = new byte[len];
 
         file.readFully(d);
-        Packet p = new Packet(op, new JSONObject(new String(d)), ipcClient.getEncoding());
+
+        JsonObject packetData = new JsonObject();
+        packetData.addProperty("", new String(d));
+        Packet p = new Packet(op, packetData, ipcClient.getEncoding());
+
         if (ipcClient.isDebugMode()) {
             System.out.println(String.format("Received packet: %s", p.toString()));
         }
@@ -81,7 +85,7 @@ public class WindowsPipe extends Pipe {
         }
 
         status = PipeStatus.CLOSING;
-        send(Packet.OpCode.CLOSE, new JSONObject(), null);
+        send(Packet.OpCode.CLOSE, new JsonObject(), null);
         status = PipeStatus.CLOSED;
         file.close();
     }

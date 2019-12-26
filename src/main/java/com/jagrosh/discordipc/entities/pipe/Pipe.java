@@ -16,6 +16,9 @@
 
 package com.jagrosh.discordipc.entities.pipe;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import com.jagrosh.discordipc.IPCClient;
 import com.jagrosh.discordipc.IPCListener;
 import com.jagrosh.discordipc.entities.Callback;
@@ -23,8 +26,6 @@ import com.jagrosh.discordipc.entities.DiscordBuild;
 import com.jagrosh.discordipc.entities.Packet;
 import com.jagrosh.discordipc.entities.User;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -65,22 +66,28 @@ public abstract class Pipe {
                 pipe = createPipe(ipcClient, callbacks, location);
 
                 if (pipe != null) {
-                    pipe.send(Packet.OpCode.HANDSHAKE, new JSONObject().put("v", VERSION).put("client_id", Long.toString(clientId)), null);
+                    JsonObject finalObject = new JsonObject();
+
+                    finalObject.addProperty("v", VERSION);
+                    finalObject.addProperty("client_id", Long.toString(clientId));
+
+                    pipe.send(Packet.OpCode.HANDSHAKE, finalObject, null);
 
                     Packet p = pipe.read(); // this is a valid client at this point
 
-                    final JSONObject data = p.getJson().getJSONObject("data");
-                    final JSONObject userData = data.getJSONObject("user");
+                    final JsonObject parsedData = JsonParser.parseString(p.getJson().getAsJsonPrimitive("").getAsString()).getAsJsonObject();
+                    final JsonObject data = parsedData.getAsJsonObject("data");
+                    final JsonObject userData = data.getAsJsonObject("user");
 
                     pipe.build = DiscordBuild.from(data
-                            .getJSONObject("config")
-                            .getString("api_endpoint"));
+                            .getAsJsonObject("config")
+                            .get("api_endpoint").getAsString());
 
                     pipe.currentUser = new User(
-                            userData.getString("username"),
-                            userData.getString("discriminator"),
-                            Long.parseLong(userData.getString("id")),
-                            userData.has("avatar") ? userData.getString("avatar") : null
+                            userData.getAsJsonPrimitive("username").getAsString(),
+                            userData.getAsJsonPrimitive("discriminator").getAsString(),
+                            Long.parseLong(userData.getAsJsonPrimitive("id").getAsString()),
+                            userData.has("avatar") ? userData.getAsJsonPrimitive("avatar").getAsString() : null
                     );
 
                     if (ipcClient.isDebugMode()) {
@@ -102,7 +109,7 @@ public abstract class Pipe {
                     pipe.build = null;
                     pipe = null;
                 }
-            } catch (IOException | JSONException ex) {
+            } catch (IOException | JsonParseException ex) {
                 pipe = null;
             }
         }
@@ -214,10 +221,11 @@ public abstract class Pipe {
      * @param data     The data to send.
      * @param callback callback for the response
      */
-    public void send(Packet.OpCode op, JSONObject data, Callback callback) {
+    public void send(Packet.OpCode op, JsonObject data, Callback callback) {
         try {
             String nonce = generateNonce();
-            Packet p = new Packet(op, data.put("nonce", nonce), ipcClient.getEncoding());
+            data.addProperty("nonce", nonce);
+            Packet p = new Packet(op, data, ipcClient.getEncoding());
             if (callback != null && !callback.isEmpty())
                 callbacks.put(nonce, callback);
             write(p.toBytes());
@@ -238,10 +246,10 @@ public abstract class Pipe {
      * read thread encounters bad data.
      *
      * @return A valid {@link Packet}.
-     * @throws IOException   If the pipe breaks.
-     * @throws JSONException If the read thread receives bad data.
+     * @throws IOException        If the pipe breaks.
+     * @throws JsonParseException If the read thread receives bad data.
      */
-    public abstract Packet read() throws IOException, JSONException;
+    public abstract Packet read() throws IOException, JsonParseException;
 
     public abstract void write(byte[] b) throws IOException;
 

@@ -16,7 +16,7 @@ public class Main {
                 RichPresence.Builder builder = new RichPresence.Builder();
                 builder.setState("Testing RPC Data...")
                         .setDetails("$DETAILS_HERE")
-                        .setStartTimestamp(OffsetDateTime.now())
+                        .setStartTimestamp(OffsetDateTime.now().toEpochSecond())
                         .setLargeImage("success", "Test Successful");
                 client.sendRichPresence(builder.build());
             }

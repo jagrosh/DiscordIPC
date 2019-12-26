@@ -15,10 +15,9 @@
  */
 package com.jagrosh.discordipc.entities;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.time.OffsetDateTime;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 /**
  * An encapsulation of all data needed to properly construct a JSON RichPresence payload.
@@ -30,8 +29,8 @@ import java.time.OffsetDateTime;
 public class RichPresence {
     private final String state;
     private final String details;
-    private final OffsetDateTime startTimestamp;
-    private final OffsetDateTime endTimestamp;
+    private final long startTimestamp;
+    private final long endTimestamp;
     private final String largeImageKey;
     private final String largeImageText;
     private final String smallImageKey;
@@ -44,7 +43,7 @@ public class RichPresence {
     private final String spectateSecret;
     private final boolean instance;
 
-    public RichPresence(String state, String details, OffsetDateTime startTimestamp, OffsetDateTime endTimestamp,
+    public RichPresence(String state, String details, long startTimestamp, long endTimestamp,
                         String largeImageKey, String largeImageText, String smallImageKey, String smallImageText,
                         String partyId, int partySize, int partyMax, String matchSecret, String joinSecret,
                         String spectateSecret, boolean instance) {
@@ -66,7 +65,7 @@ public class RichPresence {
     }
 
     /**
-     * Constructs a {@link JSONObject} representing a payload to send to discord
+     * Constructs a {@link JsonObject} representing a payload to send to discord
      * to update a user's Rich Presence.
      *
      * <p>This is purely internal, and should not ever need to be called outside of
@@ -74,26 +73,83 @@ public class RichPresence {
      *
      * @return A JSONObject payload for updating a user's Rich Presence.
      */
-    public JSONObject toJson() {
-        return new JSONObject()
-                .put("state", state)
-                .put("details", details)
-                .put("timestamps", new JSONObject()
-                        .put("start", startTimestamp == null ? null : startTimestamp.toEpochSecond())
-                        .put("end", endTimestamp == null ? null : endTimestamp.toEpochSecond()))
-                .put("assets", new JSONObject()
-                        .put("large_image", largeImageKey)
-                        .put("large_text", largeImageText)
-                        .put("small_image", smallImageKey)
-                        .put("small_text", smallImageText))
-                .put("party", partyId == null ? null : new JSONObject()
-                        .put("id", partyId)
-                        .put("size", new JSONArray().put(partySize).put(partyMax)))
-                .put("secrets", new JSONObject()
-                        .put("join", joinSecret)
-                        .put("spectate", spectateSecret)
-                        .put("match", matchSecret))
-                .put("instance", instance);
+    public JsonObject toJson() {
+        JsonObject timestamps = new JsonObject(),
+                assets = new JsonObject(),
+                party = new JsonObject(),
+                secrets = new JsonObject(),
+                finalObject = new JsonObject();
+
+        if (startTimestamp > 0) {
+            timestamps.addProperty("start", startTimestamp);
+
+            if (endTimestamp > startTimestamp) {
+                timestamps.addProperty("end", endTimestamp);
+            }
+        }
+
+        if (largeImageKey != null && !largeImageKey.isEmpty()) {
+            assets.addProperty("large_image", largeImageKey);
+
+            if (largeImageText != null && !largeImageText.isEmpty()) {
+                assets.addProperty("large_text", largeImageText);
+            }
+        }
+
+        if (smallImageKey != null && !smallImageKey.isEmpty()) {
+            assets.addProperty("small_image", smallImageKey);
+
+            if (smallImageText != null && !smallImageText.isEmpty()) {
+                assets.addProperty("small_text", smallImageText);
+            }
+        }
+
+        if (partyId != null) {
+            party.addProperty("id", partyId);
+
+            JsonArray partyData = new JsonArray();
+
+            if (partySize > 0) {
+                partyData.add(new JsonPrimitive(partySize));
+
+                if (partyMax >= partySize) {
+                    partyData.add(new JsonPrimitive(partyMax));
+                }
+            }
+            party.add("size", partyData);
+        }
+
+        if (joinSecret != null && !joinSecret.isEmpty()) {
+            secrets.addProperty("join", joinSecret);
+        }
+        if (spectateSecret != null && !spectateSecret.isEmpty()) {
+            secrets.addProperty("spectate", spectateSecret);
+        }
+        if (matchSecret != null && !matchSecret.isEmpty()) {
+            secrets.addProperty("match", matchSecret);
+        }
+
+        if (state != null && !state.isEmpty()) {
+            finalObject.addProperty("state", state);
+        }
+        if (details != null && !details.isEmpty()) {
+            finalObject.addProperty("details", details);
+        }
+        if (timestamps.has("start")) {
+            finalObject.add("timestamps", timestamps);
+        }
+        if (assets.has("large_image")) {
+            finalObject.add("assets", assets);
+        }
+        if (party.has("id")) {
+            finalObject.add("party", party);
+        }
+        if (secrets.has("join") || secrets.has("spectate") || secrets.has("match")) {
+            finalObject.add("secrets", secrets);
+        }
+        finalObject.addProperty("instance", instance);
+
+        return finalObject;
     }
 
     /**
@@ -105,8 +161,8 @@ public class RichPresence {
     public static class Builder {
         private String state;
         private String details;
-        private OffsetDateTime startTimestamp;
-        private OffsetDateTime endTimestamp;
+        private long startTimestamp;
+        private long endTimestamp;
         private String largeImageKey;
         private String largeImageText;
         private String smallImageKey;
@@ -159,7 +215,7 @@ public class RichPresence {
          * @param startTimestamp The time the player started a match or activity.
          * @return This Builder.
          */
-        public Builder setStartTimestamp(OffsetDateTime startTimestamp) {
+        public Builder setStartTimestamp(long startTimestamp) {
             this.startTimestamp = startTimestamp;
             return this;
         }
@@ -170,7 +226,7 @@ public class RichPresence {
          * @param endTimestamp The time the player's activity will end.
          * @return This Builder.
          */
-        public Builder setEndTimestamp(OffsetDateTime endTimestamp) {
+        public Builder setEndTimestamp(long endTimestamp) {
             this.endTimestamp = endTimestamp;
             return this;
         }
