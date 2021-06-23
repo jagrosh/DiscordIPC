@@ -1,14 +1,8 @@
-[version]: https://api.bintray.com/packages/jagrosh/maven/DiscordIPC/images/download.svg
-[download]: https://bintray.com/jagrosh/maven/DiscordIPC/_latestVersion
-[license]: https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg
-
-[ ![version][] ][download]
-[ ![license][] ](https://github.com/jagrosh/DiscordIPC/tree/master/LICENSE)
-
 # DiscordIPC
 
 Connect locally to the Discord client using IPC for a subset of RPC features like Rich Presence and Activity Join/Spectate
 
+*This project is a fork of [jagrosh's DiscordIPC](https://github.com/jagrosh/DiscordIPC) with some changes to provide support for M1 macs*
 
 # Features
 
@@ -22,27 +16,26 @@ Connect locally to the Discord client using IPC for a subset of RPC features lik
 
 First you'll need to add this project as a dependency. If you're using maven:
 ```xml
-  <dependency>
-    <groupId>com.jagrosh</groupId>
-    <artifactId>DiscordIPC</artifactId>
-    <version>LATEST</version>
-  </dependency>
+<dependency>
+  <groupId>com.github.cbyrneee</groupId>
+  <artifactId>DiscordIPC</artifactId>
+  <version>latest_commit_hash</version>
+</dependency>
 ```
 ```xml
-  <repository>
-    <id>central</id>
-    <name>bintray</name>
-    <url>http://jcenter.bintray.com</url>
-  </repository>
+<repository>
+  <id>jitpack.io</id>
+  <url>https://jitpack.io</url>
+</repository>
 ```
 With gradle:
 ```groovy
 dependencies {
-    compile 'com.jagrosh:DiscordIPC:LATEST'
+    compile 'com.github.cbyrneee:DiscordIPC:<latest_commit_hash>'
 }
 
 repositories {
-    jcenter()
+    maven { url = "https://jitpack.io" }
 }
 ```
 
@@ -70,13 +63,3 @@ client.setListener(new IPCListener(){
 });
 client.connect();
 ```
-
-### Other Examples
-* [Monster Hunter Gathering Hall App](https://github.com/MHGatheringHall/App) - App for displaying in-game info for a non-PC game series
-
-
-# Official Discord-RPC Bindings
-
-The official RPC bindings can be found here: https://github.com/discordapp/discord-rpc
-
-A Java wrapper for the official bindings is available here: https://github.com/MinnDevelopment/Java-DiscordRPC
