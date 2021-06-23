@@ -24,11 +24,10 @@ import com.jagrosh.discordipc.entities.Packet;
 /**
  * Constants representing various status that an {@link IPCClient} can have.
  */
-public enum PipeStatus
-{
+public enum PipeStatus {
     /**
      * Status for when the IPCClient when no attempt to connect has been made.<p>
-     *
+     * <p>
      * All IPCClients are created starting with this status,
      * and it never returns for the lifespan of the client.
      */
@@ -36,14 +35,14 @@ public enum PipeStatus
 
     /**
      * Status for when the Pipe is attempting to connect.<p>
-     *
+     * <p>
      * This will become set whenever the #connect() method is called.
      */
     CONNECTING,
 
     /**
      * Status for when the Pipe is connected with Discord.<p>
-     *
+     * <p>
      * This is only present when the connection is healthy, stable,
      * and reading good data without exception.<br>
      * If the environment becomes out of line with these principles
@@ -54,7 +53,7 @@ public enum PipeStatus
 
     /**
      * Status for when the Pipe has received an {@link Packet.OpCode#CLOSE}.<p>
-     *
+     * <p>
      * This signifies that the reading thread has safely and normally shut
      * and the client is now inactive.
      */
@@ -63,11 +62,11 @@ public enum PipeStatus
     /**
      * Status for when the Pipe has unexpectedly disconnected, either because
      * of an exception, and/or due to bad data.<p>
-     *
+     * <p>
      * When the status of an Pipe becomes this, a call to
      * {@link IPCListener#onDisconnect(IPCClient, Throwable)} will be made if one
      * has been provided to the IPCClient.<p>
-     *
+     * <p>
      * Note that the IPCClient will be inactive with this status, after which a
      * call to {@link IPCClient#connect(DiscordBuild...)} can be made to "reconnect" the
      * IPCClient.

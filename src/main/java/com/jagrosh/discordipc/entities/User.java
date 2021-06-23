@@ -23,8 +23,7 @@ package com.jagrosh.discordipc.entities;
  *
  * @author John Grosh (john.a.grosh@gmail.com)
  */
-public class User
-{
+public class User {
     private final String name;
     private final String discriminator;
     private final long id;
@@ -33,13 +32,13 @@ public class User
     /**
      * Constructs a new {@link User}.<br>
      * Only implemented internally.
-     * @param name user's name
+     *
+     * @param name          user's name
      * @param discriminator user's discrim
-     * @param id user's id
-     * @param avatar user's avatar hash, or {@code null} if they have no avatar
+     * @param id            user's id
+     * @param avatar        user's avatar hash, or {@code null} if they have no avatar
      */
-    public User(String name, String discriminator, long id, String avatar)
-    {
+    public User(String name, String discriminator, long id, String avatar) {
         this.name = name;
         this.discriminator = discriminator;
         this.id = id;
@@ -51,8 +50,7 @@ public class User
      *
      * @return The Users account name.
      */
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
@@ -61,8 +59,7 @@ public class User
      *
      * @return The Users discriminator.
      */
-    public String getDiscriminator()
-    {
+    public String getDiscriminator() {
         return discriminator;
     }
 
@@ -71,8 +68,7 @@ public class User
      *
      * @return The Users Snowflake ID as a {@code long}.
      */
-    public long getIdLong()
-    {
+    public long getIdLong() {
         return id;
     }
 
@@ -81,8 +77,7 @@ public class User
      *
      * @return The Users Snowflake ID as a {@code String}.
      */
-    public String getId()
-    {
+    public String getId() {
         return Long.toString(id);
     }
 
@@ -91,8 +86,7 @@ public class User
      *
      * @return The Users avatar ID.
      */
-    public String getAvatarId()
-    {
+    public String getAvatarId() {
         return avatar;
     }
 
@@ -101,10 +95,9 @@ public class User
      *
      * @return The Users avatar URL.
      */
-    public String getAvatarUrl()
-    {
+    public String getAvatarUrl() {
         return getAvatarId() == null ? null : "https://cdn.discordapp.com/avatars/" + getId() + "/" + getAvatarId()
-            + (getAvatarId().startsWith("a_") ? ".gif" : ".png");
+                + (getAvatarId().startsWith("a_") ? ".gif" : ".png");
     }
 
     /**
@@ -112,8 +105,7 @@ public class User
      *
      * @return The Users {@link DefaultAvatar} avatar ID.
      */
-    public String getDefaultAvatarId()
-    {
+    public String getDefaultAvatarId() {
         return DefaultAvatar.values()[Integer.parseInt(getDiscriminator()) % DefaultAvatar.values().length].toString();
     }
 
@@ -122,8 +114,7 @@ public class User
      *
      * @return The Users {@link DefaultAvatar} avatar URL.
      */
-    public String getDefaultAvatarUrl()
-    {
+    public String getDefaultAvatarUrl() {
         return "https://discordapp.com/assets/" + getDefaultAvatarId() + ".png";
     }
 
@@ -133,55 +124,49 @@ public class User
      *
      * @return The Users effective avatar URL.
      */
-    public String getEffectiveAvatarUrl()
-    {
+    public String getEffectiveAvatarUrl() {
         return getAvatarUrl() == null ? getDefaultAvatarUrl() : getAvatarUrl();
     }
 
     /**
      * Gets whether or not this User is a bot.<p>
-     *
+     * <p>
      * While, at the time of writing this documentation, bots cannot
      * use Rich Presence features, there may be a time in the future
      * where they have such an ability.
      *
      * @return False
      */
-    public boolean isBot()
-    {
+    public boolean isBot() {
         return false; //bots cannot use RPC
     }
 
     /**
      * Gets the User as a discord formatted mention.<p>
-     *
+     * <p>
      * {@code <@SNOWFLAKE_ID> }
      *
      * @return A discord formatted mention of this User.
      */
-    public String getAsMention()
-    {
+    public String getAsMention() {
         return "<@" + id + '>';
     }
-    
+
     @Override
-    public boolean equals(Object o)
-    {
+    public boolean equals(Object o) {
         if (!(o instanceof User))
             return false;
         User oUser = (User) o;
         return this == oUser || this.id == oUser.id;
     }
-    
+
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return Long.hashCode(id);
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "U:" + getName() + '(' + id + ')';
     }
 
@@ -189,8 +174,7 @@ public class User
      * Constants representing one of five different
      * default avatars a {@link User} can have.
      */
-    public enum DefaultAvatar
-    {
+    public enum DefaultAvatar {
         BLURPLE("6debd47ed13483642cf09e832ed0bc1b"),
         GREY("322c936a8c8be1b803cd94861bdfa868"),
         GREEN("dd4dbc0016779df1378e7812eabaa04d"),
@@ -199,14 +183,12 @@ public class User
 
         private final String text;
 
-        DefaultAvatar(String text)
-        {
+        DefaultAvatar(String text) {
             this.text = text;
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return text;
         }
     }

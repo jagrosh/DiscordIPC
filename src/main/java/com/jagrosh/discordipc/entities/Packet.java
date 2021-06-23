@@ -15,8 +15,9 @@
  */
 package com.jagrosh.discordipc.entities;
 
-import java.nio.ByteBuffer;
 import org.json.JSONObject;
+
+import java.nio.ByteBuffer;
 
 /**
  * A data-packet received from Discord via an {@link com.jagrosh.discordipc.IPCClient IPCClient}.<br>
@@ -24,19 +25,17 @@ import org.json.JSONObject;
  *
  * @author John Grosh (john.a.grosh@gmail.com)
  */
-public class Packet
-{
+public class Packet {
     private final OpCode op;
     private final JSONObject data;
 
     /**
      * Constructs a new Packet using an {@link OpCode} and {@link JSONObject}.
      *
-     * @param op The OpCode value of this new Packet.
+     * @param op   The OpCode value of this new Packet.
      * @param data The JSONObject payload of this new Packet.
      */
-    public Packet(OpCode op, JSONObject data)
-    {
+    public Packet(OpCode op, JSONObject data) {
         this.op = op;
         this.data = data;
     }
@@ -46,10 +45,9 @@ public class Packet
      *
      * @return This Packet as a {@code byte} array.
      */
-    public byte[] toBytes()
-    {
+    public byte[] toBytes() {
         byte[] d = data.toString().getBytes();
-        ByteBuffer packet = ByteBuffer.allocate(d.length + 2*Integer.BYTES);
+        ByteBuffer packet = ByteBuffer.allocate(d.length + 2 * Integer.BYTES);
         packet.putInt(Integer.reverseBytes(op.ordinal()));
         packet.putInt(Integer.reverseBytes(d.length));
         packet.put(d);
@@ -61,8 +59,7 @@ public class Packet
      *
      * @return This Packet's OpCode.
      */
-    public OpCode getOp()
-    {
+    public OpCode getOp() {
         return op;
     }
 
@@ -71,15 +68,13 @@ public class Packet
      *
      * @return The JSONObject value of this Packet.
      */
-    public JSONObject getJson()
-    {
+    public JSONObject getJson() {
         return data;
     }
-    
+
     @Override
-    public String toString()
-    {
-        return "Pkt:"+getOp()+getJson().toString();
+    public String toString() {
+        return "Pkt:" + getOp() + getJson().toString();
     }
 
     /**
@@ -88,8 +83,7 @@ public class Packet
      * and the {@link com.jagrosh.discordipc.IPCClient IPCClient}
      * connected.
      */
-    public enum OpCode
-    {
+    public enum OpCode {
         HANDSHAKE, FRAME, CLOSE, PING, PONG
     }
 }
