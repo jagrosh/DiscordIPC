@@ -19,6 +19,7 @@ import com.jagrosh.discordipc.entities.*;
 import com.jagrosh.discordipc.entities.Packet.OpCode;
 import com.jagrosh.discordipc.entities.pipe.Pipe;
 import com.jagrosh.discordipc.entities.pipe.PipeStatus;
+import com.jagrosh.discordipc.entities.pipe.listener.PipeCreationListener;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -57,6 +58,7 @@ public final class IPCClient implements Closeable {
     private volatile Pipe pipe;
     private IPCListener listener = null;
     private Thread readThread = null;
+    private User user = null;
 
     /**
      * Constructs a new IPCClient using the provided {@code clientId}.<br>
@@ -112,10 +114,12 @@ public final class IPCClient implements Closeable {
         callbacks.clear();
         pipe = null;
 
-        pipe = Pipe.openPipe(this, clientId, callbacks, preferredOrder);
+        PipeCreationListener pipeCreationListener = (user) -> this.user = user;
+        pipe = Pipe.openPipe(this, pipeCreationListener, clientId, callbacks, preferredOrder);
 
         if (listener != null)
-            listener.onReady(this);
+            listener.onReady(this, user);
+
         startReading();
     }
 
@@ -155,10 +159,10 @@ public final class IPCClient implements Closeable {
     public void sendRichPresence(RichPresence presence, Callback callback) {
         checkConnected(true);
         pipe.send(OpCode.FRAME, new JSONObject()
-                .put("cmd", "SET_ACTIVITY")
-                .put("args", new JSONObject()
-                        .put("pid", getPID())
-                        .put("activity", presence == null ? null : presence.toJson())), callback);
+            .put("cmd", "SET_ACTIVITY")
+            .put("args", new JSONObject()
+                .put("pid", getPID())
+                .put("activity", presence == null ? null : presence.toJson())), callback);
     }
 
     /**
@@ -195,8 +199,8 @@ public final class IPCClient implements Closeable {
         if (!sub.isSubscribable())
             throw new IllegalStateException("Cannot subscribe to " + sub + " event!");
         pipe.send(OpCode.FRAME, new JSONObject()
-                .put("cmd", "SUBSCRIBE")
-                .put("evt", sub.name()), callback);
+            .put("cmd", "SUBSCRIBE")
+            .put("evt", sub.name()), callback);
     }
 
     /**
@@ -294,6 +298,7 @@ public final class IPCClient implements Closeable {
                         case UNKNOWN:
                             break;
                     }
+
                     if (listener != null && json.has("cmd") && json.getString("cmd").equals("DISPATCH")) {
                         try {
                             JSONObject data = json.getJSONObject("data");
@@ -309,11 +314,12 @@ public final class IPCClient implements Closeable {
                                 case ACTIVITY_JOIN_REQUEST:
                                     JSONObject u = data.getJSONObject("user");
                                     User user = new User(
-                                            u.getString("username"),
-                                            u.getString("discriminator"),
-                                            Long.parseLong(u.getString("id")),
-                                            u.optString("avatar", null)
+                                        u.getString("username"),
+                                        u.getString("discriminator"),
+                                        Long.parseLong(u.getString("id")),
+                                        u.optString("avatar", null)
                                     );
+
                                     listener.onActivityJoinRequest(this, data.optString("secret", null), user);
                                     break;
                             }

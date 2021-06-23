@@ -83,8 +83,9 @@ public interface IPCListener {
      * Fired whenever an {@link IPCClient} is ready and connected to Discord.
      *
      * @param client The now ready IPCClient.
+     * @param user The client's user information.
      */
-    default void onReady(IPCClient client) {
+    default void onReady(IPCClient client, User user) {
     }
 
     /**

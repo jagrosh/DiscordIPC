@@ -21,6 +21,8 @@ import com.jagrosh.discordipc.IPCListener;
 import com.jagrosh.discordipc.entities.Callback;
 import com.jagrosh.discordipc.entities.DiscordBuild;
 import com.jagrosh.discordipc.entities.Packet;
+import com.jagrosh.discordipc.entities.User;
+import com.jagrosh.discordipc.entities.pipe.listener.PipeCreationListener;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,7 +47,7 @@ public abstract class Pipe {
         this.callbacks = callbacks;
     }
 
-    public static Pipe openPipe(IPCClient ipcClient, long clientId, HashMap<String, Callback> callbacks,
+    public static Pipe openPipe(IPCClient ipcClient, PipeCreationListener pipeCreationListener, long clientId, HashMap<String, Callback> callbacks,
                                 DiscordBuild... preferredOrder) throws NoDiscordClientException {
 
         if (preferredOrder == null || preferredOrder.length == 0)
@@ -62,14 +64,21 @@ public abstract class Pipe {
 
                 pipe.send(Packet.OpCode.HANDSHAKE, new JSONObject().put("v", VERSION).put("client_id", Long.toString(clientId)), null);
 
-                Packet p = pipe.read(); // this is a valid client at this point
+                Packet p = pipe.read();
 
-                pipe.build = DiscordBuild.from(p.getJson().getJSONObject("data")
-                        .getJSONObject("config")
-                        .getString("api_endpoint"));
+                JSONObject data = p.getJson().getJSONObject("data");
+                JSONObject userObject = data.getJSONObject("user");
 
-                // we're done if we found our first choice
+                pipe.build = DiscordBuild.from(data.getJSONObject("config").getString("api_endpoint"));
                 if (pipe.build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0]) {
+                    // Notify the client that we have found a user
+                    pipeCreationListener.onUserFound(new User(
+                        userObject.getString("username"),
+                        userObject.getString("discriminator"),
+                        Long.parseLong(userObject.getString("id")),
+                        userObject.optString("avatar", null)
+                    ));
+
                     break;
                 }
 
