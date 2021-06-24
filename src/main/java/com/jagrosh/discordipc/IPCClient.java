@@ -15,8 +15,11 @@
  */
 package com.jagrosh.discordipc;
 
-import com.jagrosh.discordipc.entities.*;
+import com.jagrosh.discordipc.entities.DiscordBuild;
+import com.jagrosh.discordipc.entities.Packet;
 import com.jagrosh.discordipc.entities.Packet.OpCode;
+import com.jagrosh.discordipc.entities.RichPresence;
+import com.jagrosh.discordipc.entities.User;
 import com.jagrosh.discordipc.entities.pipe.Pipe;
 import com.jagrosh.discordipc.entities.pipe.PipeStatus;
 import com.jagrosh.discordipc.entities.pipe.listener.PipeCreationListener;
@@ -27,7 +30,6 @@ import org.json.JSONObject;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.util.HashMap;
 
 /**
  * Represents a Discord IPC Client that can send and receive
@@ -54,7 +56,6 @@ import java.util.HashMap;
  */
 public final class IPCClient implements Closeable {
     private final long clientId;
-    private final HashMap<String, Callback> callbacks = new HashMap<>();
     private volatile Pipe pipe;
     private IPCListener listener = null;
     private Thread readThread = null;
@@ -111,11 +112,10 @@ public final class IPCClient implements Closeable {
      */
     public void connect(DiscordBuild... preferredOrder) throws NoDiscordClientException {
         checkConnected(false);
-        callbacks.clear();
         pipe = null;
 
         PipeCreationListener pipeCreationListener = (user) -> this.user = user;
-        pipe = Pipe.openPipe(this, pipeCreationListener, clientId, callbacks, preferredOrder);
+        pipe = Pipe.openPipe(this, pipeCreationListener, clientId, preferredOrder);
 
         if (listener != null)
             listener.onReady(this, user);
@@ -138,31 +138,12 @@ public final class IPCClient implements Closeable {
      * @see RichPresence
      */
     public void sendRichPresence(RichPresence presence) {
-        sendRichPresence(presence, null);
-    }
-
-    /**
-     * Sends a {@link RichPresence} to the Discord client.<p>
-     * <p>
-     * This is where the IPCClient will officially display
-     * a Rich Presence in the Discord client.<p>
-     * <p>
-     * Sending this again will overwrite the last provided
-     * {@link RichPresence}.
-     *
-     * @param presence The {@link RichPresence} to send.
-     * @param callback A {@link Callback} to handle success or error
-     * @throws IllegalStateException If a connection was not made prior to invoking
-     *                               this method.
-     * @see RichPresence
-     */
-    public void sendRichPresence(RichPresence presence, Callback callback) {
         checkConnected(true);
         pipe.send(OpCode.FRAME, new JSONObject()
             .put("cmd", "SET_ACTIVITY")
             .put("args", new JSONObject()
                 .put("pid", getPID())
-                .put("activity", presence == null ? null : presence.toJson())), callback);
+                .put("activity", presence == null ? null : presence.toJson())));
     }
 
     /**
@@ -178,29 +159,12 @@ public final class IPCClient implements Closeable {
      *                               this method.
      */
     public void subscribe(Event sub) {
-        subscribe(sub, null);
-    }
-
-    /**
-     * Adds an event {@link Event} to this IPCClient.<br>
-     * If the provided {@link Event} is added more than once,
-     * it does nothing.
-     * Once added, there is no way to remove the subscription
-     * other than {@link #close() closing} the connection
-     * and creating a new one.
-     *
-     * @param sub      The event {@link Event} to add.
-     * @param callback The {@link Callback} to handle success or failure
-     * @throws IllegalStateException If a connection was not made prior to invoking
-     *                               this method.
-     */
-    public void subscribe(Event sub, Callback callback) {
         checkConnected(true);
         if (!sub.isSubscribable())
             throw new IllegalStateException("Cannot subscribe to " + sub + " event!");
         pipe.send(OpCode.FRAME, new JSONObject()
             .put("cmd", "SUBSCRIBE")
-            .put("evt", sub.name()), callback);
+            .put("evt", sub.name()));
     }
 
     /**
@@ -279,25 +243,6 @@ public final class IPCClient implements Closeable {
                 Packet p;
                 while ((p = pipe.read()).getOp() != OpCode.CLOSE) {
                     JSONObject json = p.getJson();
-                    Event event = Event.of(json.optString("evt", null));
-                    String nonce = json.optString("nonce", null);
-                    switch (event) {
-                        case NULL:
-                            if (nonce != null && callbacks.containsKey(nonce))
-                                callbacks.remove(nonce).succeed(p);
-                            break;
-
-                        case ERROR:
-                            if (nonce != null && callbacks.containsKey(nonce))
-                                callbacks.remove(nonce).fail(json.getJSONObject("data").optString("message", null));
-                            break;
-
-                        case ACTIVITY_JOIN:
-                        case ACTIVITY_SPECTATE:
-                        case ACTIVITY_JOIN_REQUEST:
-                        case UNKNOWN:
-                            break;
-                    }
 
                     if (listener != null && json.has("cmd") && json.getString("cmd").equals("DISPATCH")) {
                         try {

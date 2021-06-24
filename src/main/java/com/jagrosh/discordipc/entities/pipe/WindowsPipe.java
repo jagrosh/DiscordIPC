@@ -17,7 +17,6 @@
 package com.jagrosh.discordipc.entities.pipe;
 
 import com.jagrosh.discordipc.IPCClient;
-import com.jagrosh.discordipc.entities.Callback;
 import com.jagrosh.discordipc.entities.Packet;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -25,14 +24,13 @@ import org.json.JSONObject;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.HashMap;
 
 public class WindowsPipe extends Pipe {
 
     private final RandomAccessFile file;
 
-    WindowsPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, String location) {
-        super(ipcClient, callbacks);
+    WindowsPipe(IPCClient ipcClient, String location) {
+        super(ipcClient);
         try {
             this.file = new RandomAccessFile(location, "rw");
         } catch (FileNotFoundException e) {
@@ -73,7 +71,7 @@ public class WindowsPipe extends Pipe {
 
     @Override
     public void close() throws IOException {
-        send(Packet.OpCode.CLOSE, new JSONObject(), null);
+        send(Packet.OpCode.CLOSE, new JSONObject());
         status = PipeStatus.CLOSED;
         file.close();
     }

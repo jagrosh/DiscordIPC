@@ -17,7 +17,6 @@
 package com.jagrosh.discordipc.entities.pipe;
 
 import com.jagrosh.discordipc.IPCClient;
-import com.jagrosh.discordipc.entities.Callback;
 import com.jagrosh.discordipc.entities.Packet;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,14 +27,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 
 public class UnixPipe extends Pipe {
 
     private final AFUNIXSocket socket;
 
-    UnixPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, String location) throws IOException {
-        super(ipcClient, callbacks);
+    UnixPipe(IPCClient ipcClient, String location) throws IOException {
+        super(ipcClient);
 
         socket = AFUNIXSocket.newInstance();
         socket.connect(new AFUNIXSocketAddress(new File(location)));
@@ -87,7 +85,7 @@ public class UnixPipe extends Pipe {
 
     @Override
     public void close() throws IOException {
-        send(Packet.OpCode.CLOSE, new JSONObject(), null);
+        send(Packet.OpCode.CLOSE, new JSONObject());
         status = PipeStatus.CLOSED;
         socket.close();
     }

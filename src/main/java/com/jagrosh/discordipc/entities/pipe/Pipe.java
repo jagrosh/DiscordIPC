@@ -18,7 +18,6 @@ package com.jagrosh.discordipc.entities.pipe;
 
 import com.jagrosh.discordipc.IPCClient;
 import com.jagrosh.discordipc.IPCListener;
-import com.jagrosh.discordipc.entities.Callback;
 import com.jagrosh.discordipc.entities.DiscordBuild;
 import com.jagrosh.discordipc.entities.Packet;
 import com.jagrosh.discordipc.entities.User;
@@ -28,7 +27,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.UUID;
 
 public abstract class Pipe {
@@ -37,17 +35,15 @@ public abstract class Pipe {
     // a list of system property keys to get IPC file from different unix systems.
     private final static String[] unixPaths = {"XDG_RUNTIME_DIR", "TMPDIR", "TMP", "TEMP"};
     final IPCClient ipcClient;
-    private final HashMap<String, Callback> callbacks;
     PipeStatus status = PipeStatus.CONNECTING;
     IPCListener listener;
     private DiscordBuild build;
 
-    Pipe(IPCClient ipcClient, HashMap<String, Callback> callbacks) {
+    Pipe(IPCClient ipcClient) {
         this.ipcClient = ipcClient;
-        this.callbacks = callbacks;
     }
 
-    public static Pipe openPipe(IPCClient ipcClient, PipeCreationListener pipeCreationListener, long clientId, HashMap<String, Callback> callbacks,
+    public static Pipe openPipe(IPCClient ipcClient, PipeCreationListener pipeCreationListener, long clientId,
                                 DiscordBuild... preferredOrder) throws NoDiscordClientException {
 
         if (preferredOrder == null || preferredOrder.length == 0)
@@ -60,9 +56,9 @@ public abstract class Pipe {
         for (int i = 0; i < 10; i++) {
             try {
                 String location = getPipeLocation(i);
-                pipe = createPipe(ipcClient, callbacks, location);
+                pipe = createPipe(ipcClient, location);
 
-                pipe.send(Packet.OpCode.HANDSHAKE, new JSONObject().put("v", VERSION).put("client_id", Long.toString(clientId)), null);
+                pipe.send(Packet.OpCode.HANDSHAKE, new JSONObject().put("v", VERSION).put("client_id", Long.toString(clientId)));
 
                 Packet p = pipe.read();
 
@@ -137,14 +133,14 @@ public abstract class Pipe {
         return pipe;
     }
 
-    private static Pipe createPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, String location) {
+    private static Pipe createPipe(IPCClient ipcClient, String location) {
         String osName = System.getProperty("os.name").toLowerCase();
 
         if (osName.contains("win")) {
-            return new WindowsPipe(ipcClient, callbacks, location);
+            return new WindowsPipe(ipcClient, location);
         } else if (osName.contains("linux") || osName.contains("mac")) {
             try {
-                return new UnixPipe(ipcClient, callbacks, location);
+                return new UnixPipe(ipcClient, location);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -185,16 +181,13 @@ public abstract class Pipe {
     /**
      * Sends json with the given {@link Packet.OpCode}.
      *
-     * @param op       The {@link Packet.OpCode} to send data with.
-     * @param data     The data to send.
-     * @param callback callback for the response
+     * @param op   The {@link Packet.OpCode} to send data with.
+     * @param data The data to send.
      */
-    public void send(Packet.OpCode op, JSONObject data, Callback callback) {
+    public void send(Packet.OpCode op, JSONObject data) {
         try {
             String nonce = generateNonce();
             Packet p = new Packet(op, data.put("nonce", nonce));
-            if (callback != null && !callback.isEmpty())
-                callbacks.put(nonce, callback);
             write(p.toBytes());
             if (listener != null)
                 listener.onPacketSent(ipcClient, p);
