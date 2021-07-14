@@ -83,7 +83,7 @@ public abstract class Pipe {
 
                 pipe.build = null;
                 pipe = null;
-            } catch (IOException | JSONException ex) {
+            } catch (IOException | RuntimeException ignored) {
                 pipe = null;
             }
         }
