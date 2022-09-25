@@ -5,6 +5,7 @@ import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
 
 import java.time.OffsetDateTime;
 
+@SuppressWarnings("resource")
 public class Main {
 
     public static void main(String[] args) throws NoDiscordClientException {
