@@ -159,7 +159,7 @@ public abstract class Pipe {
                 throw new NoDiscordClientException();
             }
         }
-        // close unused files, except skip 'any' because its always a duplicate
+        // close unused files, except skip 'any' because it's always a duplicate
         for (int i = 0; i < open.length; i++) {
             if (i == DiscordBuild.ANY.ordinal())
                 continue;
@@ -185,8 +185,7 @@ public abstract class Pipe {
         String osName = System.getProperty("os.name").toLowerCase();
 
         if (osName.contains("win")) {
-            WindowsPipe attemptedPipe = new WindowsPipe(ipcClient, callbacks, location);
-            return attemptedPipe.file != null ? attemptedPipe : null;
+            return new WindowsPipe(ipcClient, callbacks, location);
         } else if (osName.contains("linux") || osName.contains("mac")) {
             try {
                 return osName.contains("mac") ? new MacPipe(ipcClient, callbacks, location) : new UnixPipe(ipcClient, callbacks, location);

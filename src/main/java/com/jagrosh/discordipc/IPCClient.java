@@ -68,102 +68,6 @@ public final class IPCClient implements Closeable {
      * Constructs a new IPCClient using the provided {@code clientId}.<br>
      * This is initially unconnected to Discord.
      *
-     * @param clientId      The Rich Presence application's client ID, which can be found
-     *                      <a href=https://discord.com/developers/applications/me>here</a>
-     * @param autoRegister  Whether to register as an application with discord
-     * @param applicationId The application id to register with, usually the client id in string form
-     */
-    public IPCClient(long clientId, boolean autoRegister, String applicationId) {
-        this.clientId = clientId;
-        this.applicationId = applicationId;
-        this.autoRegister = autoRegister;
-        this.optionalSteamId = null;
-        this.debugMode = false;
-        this.verboseLogging = false;
-    }
-
-    /**
-     * Constructs a new IPCClient using the provided {@code clientId}.<br>
-     * This is initially unconnected to Discord.
-     *
-     * @param clientId        The Rich Presence application's client ID, which can be found
-     *                        <a href=https://discord.com/developers/applications/me>here</a>
-     * @param autoRegister    Whether to register as an application with discord
-     * @param applicationId   The application id to register with, usually the client id in string form
-     * @param optionalSteamId The steam id to register with, registers as a steam game if present
-     */
-    public IPCClient(long clientId, boolean autoRegister, String applicationId, String optionalSteamId) {
-        this.clientId = clientId;
-        this.applicationId = applicationId;
-        this.autoRegister = autoRegister;
-        this.optionalSteamId = optionalSteamId;
-        this.debugMode = false;
-        this.verboseLogging = false;
-    }
-
-    /**
-     * Constructs a new IPCClient using the provided {@code clientId}.<br>
-     * This is initially unconnected to Discord.
-     *
-     * @param clientId      The Rich Presence application's client ID, which can be found
-     *                      <a href=https://discord.com/developers/applications/me>here</a>
-     * @param debugMode     Whether Debug Logging should be shown for this client
-     * @param autoRegister  Whether to register as an application with discord
-     * @param applicationId The application id to register with, usually the client id in string form
-     */
-    public IPCClient(long clientId, boolean debugMode, boolean autoRegister, String applicationId) {
-        this.clientId = clientId;
-        this.debugMode = debugMode;
-        this.applicationId = applicationId;
-        this.autoRegister = autoRegister;
-        this.optionalSteamId = null;
-        this.verboseLogging = false;
-    }
-
-    /**
-     * Constructs a new IPCClient using the provided {@code clientId}.<br>
-     * This is initially unconnected to Discord.
-     *
-     * @param clientId        The Rich Presence application's client ID, which can be found
-     *                        <a href=https://discord.com/developers/applications/me>here</a>
-     * @param debugMode       Whether Debug Logging should be shown for this client
-     * @param autoRegister    Whether to register as an application with discord
-     * @param applicationId   The application id to register with, usually the client id in string form
-     * @param optionalSteamId The steam id to register with, registers as a steam game if present
-     */
-    public IPCClient(long clientId, boolean debugMode, boolean autoRegister, String applicationId, String optionalSteamId) {
-        this.clientId = clientId;
-        this.debugMode = debugMode;
-        this.applicationId = applicationId;
-        this.autoRegister = autoRegister;
-        this.optionalSteamId = optionalSteamId;
-        this.verboseLogging = false;
-    }
-
-    /**
-     * Constructs a new IPCClient using the provided {@code clientId}.<br>
-     * This is initially unconnected to Discord.
-     *
-     * @param clientId       The Rich Presence application's client ID, which can be found
-     *                       <a href=https://discord.com/developers/applications/me>here</a>
-     * @param debugMode      Whether Debug Logging should be shown for this client
-     * @param verboseLogging Whether excess/deeper-rooted logging should be shown
-     * @param autoRegister   Whether to register as an application with discord
-     * @param applicationId  The application id to register with, usually the client id in string form
-     */
-    public IPCClient(long clientId, boolean debugMode, boolean verboseLogging, boolean autoRegister, String applicationId) {
-        this.clientId = clientId;
-        this.debugMode = debugMode;
-        this.verboseLogging = verboseLogging;
-        this.applicationId = applicationId;
-        this.autoRegister = autoRegister;
-        this.optionalSteamId = null;
-    }
-
-    /**
-     * Constructs a new IPCClient using the provided {@code clientId}.<br>
-     * This is initially unconnected to Discord.
-     *
      * @param clientId        The Rich Presence application's client ID, which can be found
      *                        <a href=https://discord.com/developers/applications/me>here</a>
      * @param debugMode       Whether Debug Logging should be shown for this client
@@ -179,6 +83,77 @@ public final class IPCClient implements Closeable {
         this.applicationId = applicationId;
         this.autoRegister = autoRegister;
         this.optionalSteamId = optionalSteamId;
+    }
+
+    /**
+     * Constructs a new IPCClient using the provided {@code clientId}.<br>
+     * This is initially unconnected to Discord.
+     *
+     * @param clientId        The Rich Presence application's client ID, which can be found
+     *                        <a href=https://discord.com/developers/applications/me>here</a>
+     * @param autoRegister    Whether to register as an application with discord
+     * @param applicationId   The application id to register with, usually the client id in string form
+     * @param optionalSteamId The steam id to register with, registers as a steam game if present
+     */
+    public IPCClient(long clientId, boolean autoRegister, String applicationId, String optionalSteamId) {
+        this(clientId, false, false, autoRegister, applicationId, optionalSteamId);
+    }
+
+    /**
+     * Constructs a new IPCClient using the provided {@code clientId}.<br>
+     * This is initially unconnected to Discord.
+     *
+     * @param clientId      The Rich Presence application's client ID, which can be found
+     *                      <a href=https://discord.com/developers/applications/me>here</a>
+     * @param autoRegister  Whether to register as an application with discord
+     * @param applicationId The application id to register with, usually the client id in string form
+     */
+    public IPCClient(long clientId, boolean autoRegister, String applicationId) {
+        this(clientId, autoRegister, applicationId, null);
+    }
+
+    /**
+     * Constructs a new IPCClient using the provided {@code clientId}.<br>
+     * This is initially unconnected to Discord.
+     *
+     * @param clientId        The Rich Presence application's client ID, which can be found
+     *                        <a href=https://discord.com/developers/applications/me>here</a>
+     * @param debugMode       Whether Debug Logging should be shown for this client
+     * @param autoRegister    Whether to register as an application with discord
+     * @param applicationId   The application id to register with, usually the client id in string form
+     * @param optionalSteamId The steam id to register with, registers as a steam game if present
+     */
+    public IPCClient(long clientId, boolean debugMode, boolean autoRegister, String applicationId, String optionalSteamId) {
+        this(clientId, debugMode, false, autoRegister, applicationId, optionalSteamId);
+    }
+
+    /**
+     * Constructs a new IPCClient using the provided {@code clientId}.<br>
+     * This is initially unconnected to Discord.
+     *
+     * @param clientId      The Rich Presence application's client ID, which can be found
+     *                      <a href=https://discord.com/developers/applications/me>here</a>
+     * @param debugMode     Whether Debug Logging should be shown for this client
+     * @param autoRegister  Whether to register as an application with discord
+     * @param applicationId The application id to register with, usually the client id in string form
+     */
+    public IPCClient(long clientId, boolean debugMode, boolean autoRegister, String applicationId) {
+        this(clientId, debugMode, autoRegister, applicationId, null);
+    }
+
+    /**
+     * Constructs a new IPCClient using the provided {@code clientId}.<br>
+     * This is initially unconnected to Discord.
+     *
+     * @param clientId       The Rich Presence application's client ID, which can be found
+     *                       <a href=https://discord.com/developers/applications/me>here</a>
+     * @param debugMode      Whether Debug Logging should be shown for this client
+     * @param verboseLogging Whether excess/deeper-rooted logging should be shown
+     * @param autoRegister   Whether to register as an application with discord
+     * @param applicationId  The application id to register with, usually the client id in string form
+     */
+    public IPCClient(long clientId, boolean debugMode, boolean verboseLogging, boolean autoRegister, String applicationId) {
+        this(clientId, debugMode, verboseLogging, autoRegister, applicationId, null);
     }
 
     /**
