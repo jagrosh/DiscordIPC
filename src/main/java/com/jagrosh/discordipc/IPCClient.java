@@ -56,6 +56,7 @@ import java.util.HashMap;
  */
 public final class IPCClient implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(IPCClient.class);
+    private static Logger FORCED_LOGGER = null;
     private final long clientId;
     private final boolean debugMode, verboseLogging, autoRegister;
     private final HashMap<String, Callback> callbacks = new HashMap<>();
@@ -204,6 +205,25 @@ public final class IPCClient implements Closeable {
     }
 
     /**
+     * Retrieves the current logger that should be used
+     *
+     * @param instance The logger instance
+     * @return the current logger to use
+     */
+    public Logger getCurrentLogger(final Logger instance) {
+        return FORCED_LOGGER != null ? FORCED_LOGGER : instance;
+    }
+
+    /**
+     * Sets the current logger that should be used
+     *
+     * @param forcedLogger The logger instance to be used
+     */
+    public static void setForcedLogger(Logger forcedLogger) {
+        FORCED_LOGGER = forcedLogger;
+    }
+
+    /**
      * Sets this IPCClient's {@link IPCListener} to handle received events.
      * <p>
      * A single IPCClient can only have one of these set at any given time.<br>
@@ -333,13 +353,13 @@ public final class IPCClient implements Closeable {
                 if (debugMode) {
                     ex.printStackTrace();
                 } else {
-                    LOGGER.error("Unable to register application, enable debug mode for trace...");
+                    getCurrentLogger(LOGGER).error("Unable to register application, enable debug mode for trace...");
                 }
             }
         }
 
         if (debugMode) {
-            LOGGER.info("[DEBUG] Client is now connected and ready!");
+            getCurrentLogger(LOGGER).info("[DEBUG] Client is now connected and ready!");
         }
 
         if (listener != null) {
@@ -386,7 +406,7 @@ public final class IPCClient implements Closeable {
         checkConnected(true);
 
         if (debugMode) {
-            LOGGER.info("[DEBUG] Sending RichPresence to discord: " + (presence == null ? null : presence.toDecodedJson(encoding)));
+            getCurrentLogger(LOGGER).info("[DEBUG] Sending RichPresence to discord: " + (presence == null ? null : presence.toDecodedJson(encoding)));
         }
 
         // Setup and Send JsonObject Data Representing an RPC Update
@@ -459,7 +479,7 @@ public final class IPCClient implements Closeable {
             throw new IllegalStateException("Cannot subscribe to " + sub + " event!");
 
         if (debugMode) {
-            LOGGER.info(String.format("[DEBUG] Subscribing to Event: %s", sub.name()));
+            getCurrentLogger(LOGGER).info(String.format("[DEBUG] Subscribing to Event: %s", sub.name()));
         }
 
         JsonObject pipeData = new JsonObject();
@@ -481,7 +501,7 @@ public final class IPCClient implements Closeable {
 
         if (user != null) {
             if (debugMode) {
-                LOGGER.info(String.format("[DEBUG] Sending response to %s as %s", user.getName(), approvalMode.name()));
+                getCurrentLogger(LOGGER).info(String.format("[DEBUG] Sending response to %s as %s", user.getName(), approvalMode.name()));
             }
 
             JsonObject pipeData = new JsonObject();
@@ -532,7 +552,7 @@ public final class IPCClient implements Closeable {
             pipe.close();
         } catch (IOException e) {
             if (debugMode) {
-                LOGGER.info(String.format("[DEBUG] Failed to close pipe: %s", e));
+                getCurrentLogger(LOGGER).info(String.format("[DEBUG] Failed to close pipe: %s", e));
             }
         }
     }
@@ -605,7 +625,7 @@ public final class IPCClient implements Closeable {
         }, "IPCClient-Reader");
 
         if (debugMode) {
-            LOGGER.info("[DEBUG] Starting IPCClient reading thread!");
+            getCurrentLogger(LOGGER).info("[DEBUG] Starting IPCClient reading thread!");
         }
         readThread.start();
     }
@@ -638,25 +658,25 @@ public final class IPCClient implements Closeable {
 
                         case ACTIVITY_JOIN:
                             if (debugMode) {
-                                LOGGER.info("[DEBUG] Reading thread received a 'join' event.");
+                                getCurrentLogger(LOGGER).info("[DEBUG] Reading thread received a 'join' event.");
                             }
                             break;
 
                         case ACTIVITY_SPECTATE:
                             if (debugMode) {
-                                LOGGER.info("[DEBUG] Reading thread received a 'spectate' event.");
+                                getCurrentLogger(LOGGER).info("[DEBUG] Reading thread received a 'spectate' event.");
                             }
                             break;
 
                         case ACTIVITY_JOIN_REQUEST:
                             if (debugMode) {
-                                LOGGER.info("[DEBUG] Reading thread received a 'join request' event.");
+                                getCurrentLogger(LOGGER).info("[DEBUG] Reading thread received a 'join request' event.");
                             }
                             break;
 
                         case UNKNOWN:
                             if (debugMode) {
-                                LOGGER.info("[DEBUG] Reading thread encountered an event with an unknown type: " +
+                                getCurrentLogger(LOGGER).info("[DEBUG] Reading thread encountered an event with an unknown type: " +
                                         json.getAsJsonPrimitive("evt").getAsString());
                             }
                             break;
@@ -690,7 +710,7 @@ public final class IPCClient implements Closeable {
                                     break;
                             }
                         } catch (Exception e) {
-                            LOGGER.error(String.format("Exception when handling event: %s", e));
+                            getCurrentLogger(LOGGER).error(String.format("Exception when handling event: %s", e));
                         }
                     }
                 }
@@ -699,7 +719,7 @@ public final class IPCClient implements Closeable {
             if (listener != null)
                 listener.onClose(instance, p.getJson());
         } catch (IOException | JsonParseException ex) {
-            LOGGER.error(String.format("Reading thread encountered an Exception: %s", ex));
+            getCurrentLogger(LOGGER).error(String.format("Reading thread encountered an Exception: %s", ex));
 
             pipe.setStatus(PipeStatus.DISCONNECTED);
             if (listener != null)

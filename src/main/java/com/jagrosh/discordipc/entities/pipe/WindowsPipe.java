@@ -80,7 +80,7 @@ public class WindowsPipe extends Pipe {
     @Override
     public void close() throws IOException {
         if (ipcClient.isDebugMode()) {
-            LOGGER.info("[DEBUG] Closing IPC pipe...");
+            ipcClient.getCurrentLogger(LOGGER).info("[DEBUG] Closing IPC pipe...");
         }
 
         status = PipeStatus.CLOSING;

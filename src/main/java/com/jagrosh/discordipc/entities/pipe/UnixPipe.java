@@ -70,7 +70,7 @@ public class UnixPipe extends Pipe {
         ByteBuffer bb = ByteBuffer.wrap(d);
 
         if (ipcClient.isDebugMode() && ipcClient.isVerboseLogging()) {
-            LOGGER.info(String.format("[DEBUG] Read Byte Data: %s with result %s", new String(d), readResult));
+            ipcClient.getCurrentLogger(LOGGER).info(String.format("[DEBUG] Read Byte Data: %s with result %s", new String(d), readResult));
         }
 
         Packet.OpCode op = Packet.OpCode.values()[Integer.reverseBytes(bb.getInt())];
@@ -79,7 +79,7 @@ public class UnixPipe extends Pipe {
         int reversedResult = is.read(d);
 
         if (ipcClient.isDebugMode() && ipcClient.isVerboseLogging()) {
-            LOGGER.info(String.format("[DEBUG] Read Reversed Byte Data: %s with result %s", new String(d), reversedResult));
+            ipcClient.getCurrentLogger(LOGGER).info(String.format("[DEBUG] Read Reversed Byte Data: %s with result %s", new String(d), reversedResult));
         }
 
         return receive(op, d);
@@ -93,7 +93,7 @@ public class UnixPipe extends Pipe {
     @Override
     public void close() throws IOException {
         if (ipcClient.isDebugMode()) {
-            LOGGER.info("[DEBUG] Closing IPC pipe...");
+            ipcClient.getCurrentLogger(LOGGER).info("[DEBUG] Closing IPC pipe...");
         }
 
         status = PipeStatus.CLOSING;
@@ -136,17 +136,17 @@ public class UnixPipe extends Pipe {
         String desktopFilePath = home + "/.local";
 
         if (this.mkdir(desktopFilePath))
-            LOGGER.warn("[DEBUG] Failed to create directory '" + desktopFilePath + "', may already exist");
+            ipcClient.getCurrentLogger(LOGGER).warn("[DEBUG] Failed to create directory '" + desktopFilePath + "', may already exist");
 
         desktopFilePath += "/share";
 
         if (this.mkdir(desktopFilePath))
-            LOGGER.warn("[DEBUG] Failed to create directory '" + desktopFilePath + "', may already exist");
+            ipcClient.getCurrentLogger(LOGGER).warn("[DEBUG] Failed to create directory '" + desktopFilePath + "', may already exist");
 
         desktopFilePath += "/applications";
 
         if (this.mkdir(desktopFilePath))
-            LOGGER.warn("[DEBUG] Failed to create directory '" + desktopFilePath + "', may already exist");
+            ipcClient.getCurrentLogger(LOGGER).warn("[DEBUG] Failed to create directory '" + desktopFilePath + "', may already exist");
 
         desktopFilePath += desktopFileName;
 
