@@ -16,6 +16,8 @@
 
 package com.jagrosh.discordipc.entities.pipe;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.jagrosh.discordipc.IPCClient;
 import com.jagrosh.discordipc.IPCListener;
@@ -24,8 +26,6 @@ import com.jagrosh.discordipc.entities.DiscordBuild;
 import com.jagrosh.discordipc.entities.Packet;
 import com.jagrosh.discordipc.entities.User;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 
 import java.io.File;
 import java.io.IOException;

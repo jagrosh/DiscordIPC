@@ -16,9 +16,9 @@
 
 package com.jagrosh.discordipc.entities;
 
+import com.google.gson.JsonObject;
 import com.jagrosh.discordipc.IPCClient;
 import com.jagrosh.discordipc.IPCListener;
-import com.google.gson.JsonObject;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;

@@ -16,11 +16,11 @@
 
 package com.jagrosh.discordipc.entities.pipe;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.jagrosh.discordipc.IPCClient;
 import com.jagrosh.discordipc.entities.Callback;
 import com.jagrosh.discordipc.entities.Packet;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import org.newsclub.net.unix.AFUNIXSocket;
 import org.newsclub.net.unix.AFUNIXSocketAddress;
 

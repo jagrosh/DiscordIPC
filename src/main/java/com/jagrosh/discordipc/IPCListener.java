@@ -16,9 +16,9 @@
 
 package com.jagrosh.discordipc;
 
+import com.google.gson.JsonObject;
 import com.jagrosh.discordipc.entities.Packet;
 import com.jagrosh.discordipc.entities.User;
-import com.google.gson.JsonObject;
 
 /**
  * An implementable listener used to handle events caught by an {@link IPCClient}.
