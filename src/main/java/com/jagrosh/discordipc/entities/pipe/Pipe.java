@@ -278,6 +278,7 @@ public abstract class Pipe {
      *
      * @param op   The {@link Packet.OpCode} to receive data with.
      * @param data The data to parse with.
+     * @return the resulting {@link Packet}
      */
     public Packet receive(Packet.OpCode op, byte[] data) {
         JsonObject packetData = new JsonParser().parse(new String(data)).getAsJsonObject();
