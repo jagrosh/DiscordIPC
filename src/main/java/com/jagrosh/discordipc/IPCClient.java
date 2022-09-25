@@ -56,7 +56,7 @@ import java.util.HashMap;
  */
 public final class IPCClient implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(IPCClient.class);
-    private static Logger FORCED_LOGGER = null;
+    private Logger FORCED_LOGGER = null;
     private final long clientId;
     private final boolean debugMode, verboseLogging, autoRegister;
     private final HashMap<String, Callback> callbacks = new HashMap<>();
@@ -219,7 +219,7 @@ public final class IPCClient implements Closeable {
      *
      * @param forcedLogger The logger instance to be used
      */
-    public static void setForcedLogger(Logger forcedLogger) {
+    public void setForcedLogger(Logger forcedLogger) {
         FORCED_LOGGER = forcedLogger;
     }
 
