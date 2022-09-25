@@ -26,6 +26,8 @@ import com.jagrosh.discordipc.entities.DiscordBuild;
 import com.jagrosh.discordipc.entities.Packet;
 import com.jagrosh.discordipc.entities.User;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +35,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 public abstract class Pipe {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Pipe.class);
     private static final int VERSION = 1;
     // a list of system property keys to get IPC file from different unix systems.
     private final static String[] unixPaths = {"XDG_RUNTIME_DIR", "TMPDIR", "TMP", "TEMP"};
@@ -62,14 +65,14 @@ public abstract class Pipe {
         for (int i = 0; i < 10; i++) {
             String location = getPipeLocation(i);
             if (ipcClient.isDebugMode()) {
-                ipcClient.getLogger().info(String.format("[DEBUG] Searching for IPC Pipe: \"%s\"", location));
+                LOGGER.info(String.format("[DEBUG] Searching for IPC Pipe: \"%s\"", location));
             }
 
             try {
                 File fileLocation = new File(location);
                 if (fileLocation.exists()) {
                     if (ipcClient.isDebugMode()) {
-                        ipcClient.getLogger().info(String.format("[DEBUG] Found valid file, attempting connection to IPC: \"%s\"", location));
+                        LOGGER.info(String.format("[DEBUG] Found valid file, attempting connection to IPC: \"%s\"", location));
                     }
                     pipe = createPipe(ipcClient, callbacks, fileLocation);
 
@@ -99,14 +102,14 @@ public abstract class Pipe {
                         );
 
                         if (ipcClient.isDebugMode()) {
-                            ipcClient.getLogger().info(String.format("[DEBUG] Found a valid client (%s) with packet: %s", pipe.build.name(), p));
-                            ipcClient.getLogger().info(String.format("[DEBUG] Found a valid user (%s) with id: %s", pipe.currentUser.getName(), pipe.currentUser.getId()));
+                            LOGGER.info(String.format("[DEBUG] Found a valid client (%s) with packet: %s", pipe.build.name(), p));
+                            LOGGER.info(String.format("[DEBUG] Found a valid user (%s) with id: %s", pipe.currentUser.getName(), pipe.currentUser.getId()));
                         }
 
                         // we're done if we found our first choice
                         if (pipe.build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0]) {
                             if (ipcClient.isDebugMode()) {
-                                ipcClient.getLogger().info(String.format("[DEBUG] Found preferred client: %s", pipe.build.name()));
+                                LOGGER.info(String.format("[DEBUG] Found preferred client: %s", pipe.build.name()));
                             }
                             break;
                         }
@@ -119,7 +122,7 @@ public abstract class Pipe {
                     }
                 } else {
                     if (ipcClient.isDebugMode()) {
-                        ipcClient.getLogger().info(String.format("[DEBUG] Unable to locate IPC Pipe: \"%s\"", location));
+                        LOGGER.info(String.format("[DEBUG] Unable to locate IPC Pipe: \"%s\"", location));
                     }
                 }
             } catch (IOException | JsonParseException ex) {
@@ -133,7 +136,7 @@ public abstract class Pipe {
             for (int i = 1; i < preferredOrder.length; i++) {
                 DiscordBuild cb = preferredOrder[i];
                 if (ipcClient.isDebugMode()) {
-                    ipcClient.getLogger().info(String.format("[DEBUG] Looking for client build: %s", cb.name()));
+                    LOGGER.info(String.format("[DEBUG] Looking for client build: %s", cb.name()));
                 }
 
                 if (open[cb.ordinal()] != null) {
@@ -150,7 +153,7 @@ public abstract class Pipe {
                     } else pipe.build = cb;
 
                     if (ipcClient.isDebugMode()) {
-                        ipcClient.getLogger().info(String.format("[DEBUG] Found preferred client: %s", pipe.build.name()));
+                        LOGGER.info(String.format("[DEBUG] Found preferred client: %s", pipe.build.name()));
                     }
                     break;
                 }
@@ -170,7 +173,7 @@ public abstract class Pipe {
                     // This isn't really important to applications and better
                     // as debug info
                     if (ipcClient.isDebugMode()) {
-                        ipcClient.getLogger().info(String.format("[DEBUG] Failed to close an open IPC pipe: %s", ex));
+                        LOGGER.info(String.format("[DEBUG] Failed to close an open IPC pipe: %s", ex));
                     }
                 }
             }
@@ -252,13 +255,13 @@ public abstract class Pipe {
                 callbacks.put(nonce, callback);
             write(p.toBytes());
             if (ipcClient.isDebugMode()) {
-                ipcClient.getLogger().info(String.format("[DEBUG] Sent packet: %s", p.toDecodedString()));
+                LOGGER.info(String.format("[DEBUG] Sent packet: %s", p.toDecodedString()));
             }
 
             if (listener != null)
                 listener.onPacketSent(ipcClient, p);
         } catch (IOException ex) {
-            ipcClient.getLogger().severe("Encountered an IOException while sending a packet and disconnected!");
+            LOGGER.error("Encountered an IOException while sending a packet and disconnected!");
             status = PipeStatus.DISCONNECTED;
         }
     }
@@ -285,7 +288,7 @@ public abstract class Pipe {
         Packet p = new Packet(op, packetData, ipcClient.getEncoding());
 
         if (ipcClient.isDebugMode()) {
-            ipcClient.getLogger().info(String.format("[DEBUG] Received packet: %s", p));
+            LOGGER.info(String.format("[DEBUG] Received packet: %s", p));
         }
 
         if (listener != null)

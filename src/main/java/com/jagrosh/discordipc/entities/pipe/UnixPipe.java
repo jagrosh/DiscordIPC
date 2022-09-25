@@ -23,6 +23,8 @@ import com.jagrosh.discordipc.entities.Callback;
 import com.jagrosh.discordipc.entities.Packet;
 import org.newsclub.net.unix.AFUNIXSocket;
 import org.newsclub.net.unix.AFUNIXSocketAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -34,6 +36,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 
 public class UnixPipe extends Pipe {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UnixPipe.class);
     private final AFUNIXSocket socket;
 
     UnixPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, File location) throws IOException {
@@ -67,7 +70,7 @@ public class UnixPipe extends Pipe {
         ByteBuffer bb = ByteBuffer.wrap(d);
 
         if (ipcClient.isDebugMode() && ipcClient.isVerboseLogging()) {
-            ipcClient.getLogger().info(String.format("[DEBUG] Read Byte Data: %s with result %s", new String(d), readResult));
+            LOGGER.info(String.format("[DEBUG] Read Byte Data: %s with result %s", new String(d), readResult));
         }
 
         Packet.OpCode op = Packet.OpCode.values()[Integer.reverseBytes(bb.getInt())];
@@ -76,7 +79,7 @@ public class UnixPipe extends Pipe {
         int reversedResult = is.read(d);
 
         if (ipcClient.isDebugMode() && ipcClient.isVerboseLogging()) {
-            ipcClient.getLogger().info(String.format("[DEBUG] Read Reversed Byte Data: %s with result %s", new String(d), reversedResult));
+            LOGGER.info(String.format("[DEBUG] Read Reversed Byte Data: %s with result %s", new String(d), reversedResult));
         }
 
         return receive(op, d);
@@ -90,7 +93,7 @@ public class UnixPipe extends Pipe {
     @Override
     public void close() throws IOException {
         if (ipcClient.isDebugMode()) {
-            ipcClient.getLogger().info("[DEBUG] Closing IPC pipe...");
+            LOGGER.info("[DEBUG] Closing IPC pipe...");
         }
 
         status = PipeStatus.CLOSING;
@@ -133,17 +136,17 @@ public class UnixPipe extends Pipe {
         String desktopFilePath = home + "/.local";
 
         if (this.mkdir(desktopFilePath))
-            ipcClient.getLogger().warning("[DEBUG] Failed to create directory '" + desktopFilePath + "', may already exist");
+            LOGGER.warn("[DEBUG] Failed to create directory '" + desktopFilePath + "', may already exist");
 
         desktopFilePath += "/share";
 
         if (this.mkdir(desktopFilePath))
-            ipcClient.getLogger().warning("[DEBUG] Failed to create directory '" + desktopFilePath + "', may already exist");
+            LOGGER.warn("[DEBUG] Failed to create directory '" + desktopFilePath + "', may already exist");
 
         desktopFilePath += "/applications";
 
         if (this.mkdir(desktopFilePath))
-            ipcClient.getLogger().warning("[DEBUG] Failed to create directory '" + desktopFilePath + "', may already exist");
+            LOGGER.warn("[DEBUG] Failed to create directory '" + desktopFilePath + "', may already exist");
 
         desktopFilePath += desktopFileName;
 

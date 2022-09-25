@@ -22,6 +22,8 @@ import com.jagrosh.discordipc.IPCClient;
 import com.jagrosh.discordipc.entities.Callback;
 import com.jagrosh.discordipc.entities.Packet;
 import com.jagrosh.discordipc.impl.WinRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,6 +32,7 @@ import java.io.RandomAccessFile;
 import java.util.HashMap;
 
 public class WindowsPipe extends Pipe {
+    private static final Logger LOGGER = LoggerFactory.getLogger(WindowsPipe.class);
     private static final Float javaSpec = Float.parseFloat(System.getProperty("java.specification.version"));
     private final int targetKey = WinRegistry.HKEY_CURRENT_USER;
     private final long targetLongKey = targetKey;
@@ -77,7 +80,7 @@ public class WindowsPipe extends Pipe {
     @Override
     public void close() throws IOException {
         if (ipcClient.isDebugMode()) {
-            ipcClient.getLogger().info("[DEBUG] Closing IPC pipe...");
+            LOGGER.info("[DEBUG] Closing IPC pipe...");
         }
 
         status = PipeStatus.CLOSING;
