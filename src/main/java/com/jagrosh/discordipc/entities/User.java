@@ -18,6 +18,7 @@ package com.jagrosh.discordipc.entities;
 
 import com.jagrosh.discordipc.IPCClient;
 import com.jagrosh.discordipc.IPCListener;
+import com.jagrosh.discordipc.impl.ExtendedLong;
 
 /**
  * A encapsulation of a Discord User's data provided when a
@@ -166,7 +167,7 @@ public class User {
 
     @Override
     public int hashCode() {
-        return Long.hashCode(id);
+        return ExtendedLong.hashCode(id);
     }
 
     @Override

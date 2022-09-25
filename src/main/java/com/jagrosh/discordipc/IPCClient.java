@@ -605,95 +605,10 @@ public final class IPCClient implements Closeable {
     private void startReading() {
         final IPCClient localInstance = this;
 
-        readThread = new Thread(() -> {
-            try {
-                Packet p;
-                while ((p = pipe.read()).getOp() != OpCode.CLOSE) {
-                    JsonObject json = p.getJson();
-
-                    if (json != null) {
-                        Event event = Event.of(json.has("evt") && !json.get("evt").isJsonNull() ? json.getAsJsonPrimitive("evt").getAsString() : null);
-                        String nonce = json.has("nonce") && !json.get("nonce").isJsonNull() ? json.getAsJsonPrimitive("nonce").getAsString() : null;
-
-                        switch (event) {
-                            case NULL:
-                                if (nonce != null && callbacks.containsKey(nonce))
-                                    callbacks.remove(nonce).succeed(p);
-                                break;
-
-                            case ERROR:
-                                if (nonce != null && callbacks.containsKey(nonce))
-                                    callbacks.remove(nonce).fail(json.has("data") && json.getAsJsonObject("data").has("message") ? json.getAsJsonObject("data").getAsJsonObject("message").getAsString() : null);
-                                break;
-
-                            case ACTIVITY_JOIN:
-                                if (debugMode) {
-                                    LOGGER.info("[DEBUG] Reading thread received a 'join' event.");
-                                }
-                                break;
-
-                            case ACTIVITY_SPECTATE:
-                                if (debugMode) {
-                                    LOGGER.info("[DEBUG] Reading thread received a 'spectate' event.");
-                                }
-                                break;
-
-                            case ACTIVITY_JOIN_REQUEST:
-                                if (debugMode) {
-                                    LOGGER.info("[DEBUG] Reading thread received a 'join request' event.");
-                                }
-                                break;
-
-                            case UNKNOWN:
-                                if (debugMode) {
-                                    LOGGER.info("[DEBUG] Reading thread encountered an event with an unknown type: " +
-                                            json.getAsJsonPrimitive("evt").getAsString());
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-
-                        if (listener != null && json.has("cmd") && json.getAsJsonPrimitive("cmd").getAsString().equals("DISPATCH")) {
-                            try {
-                                JsonObject data = json.getAsJsonObject("data");
-                                switch (Event.of(json.getAsJsonPrimitive("evt").getAsString())) {
-                                    case ACTIVITY_JOIN:
-                                        listener.onActivityJoin(localInstance, data.getAsJsonPrimitive("secret").getAsString());
-                                        break;
-
-                                    case ACTIVITY_SPECTATE:
-                                        listener.onActivitySpectate(localInstance, data.getAsJsonPrimitive("secret").getAsString());
-                                        break;
-
-                                    case ACTIVITY_JOIN_REQUEST:
-                                        final JsonObject u = data.getAsJsonObject("user");
-                                        final User user = new User(
-                                                u.getAsJsonPrimitive("username").getAsString(),
-                                                u.getAsJsonPrimitive("discriminator").getAsString(),
-                                                Long.parseLong(u.getAsJsonPrimitive("id").getAsString()),
-                                                u.has("avatar") ? u.getAsJsonPrimitive("avatar").getAsString() : null
-                                        );
-                                        listener.onActivityJoinRequest(localInstance, data.has("secret") ? data.getAsJsonObject("secret").getAsString() : null, user);
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            } catch (Exception e) {
-                                LOGGER.severe(String.format("Exception when handling event: %s", e));
-                            }
-                        }
-                    }
-                }
-                pipe.setStatus(PipeStatus.DISCONNECTED);
-                if (listener != null)
-                    listener.onClose(localInstance, p.getJson());
-            } catch (IOException | JsonParseException ex) {
-                LOGGER.severe(String.format("Reading thread encountered an Exception: %s", ex));
-
-                pipe.setStatus(PipeStatus.DISCONNECTED);
-                if (listener != null)
-                    listener.onDisconnect(localInstance, ex);
+        readThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                IPCClient.this.readPipe(localInstance);
             }
         }, "IPCClient-Reader");
 
@@ -701,6 +616,103 @@ public final class IPCClient implements Closeable {
             LOGGER.info("[DEBUG] Starting IPCClient reading thread!");
         }
         readThread.start();
+    }
+
+    /**
+     * Call the first {@link Pipe#read()} via try-catch
+     *
+     * @param instance The {@link IPCClient} instance
+     */
+    private void readPipe(final IPCClient instance) {
+        try {
+            Packet p;
+            while ((p = pipe.read()).getOp() != OpCode.CLOSE) {
+                JsonObject json = p.getJson();
+
+                if (json != null) {
+                    Event event = Event.of(json.has("evt") && !json.get("evt").isJsonNull() ? json.getAsJsonPrimitive("evt").getAsString() : null);
+                    String nonce = json.has("nonce") && !json.get("nonce").isJsonNull() ? json.getAsJsonPrimitive("nonce").getAsString() : null;
+
+                    switch (event) {
+                        case NULL:
+                            if (nonce != null && callbacks.containsKey(nonce))
+                                callbacks.remove(nonce).succeed(p);
+                            break;
+
+                        case ERROR:
+                            if (nonce != null && callbacks.containsKey(nonce))
+                                callbacks.remove(nonce).fail(json.has("data") && json.getAsJsonObject("data").has("message") ? json.getAsJsonObject("data").getAsJsonObject("message").getAsString() : null);
+                            break;
+
+                        case ACTIVITY_JOIN:
+                            if (debugMode) {
+                                LOGGER.info("[DEBUG] Reading thread received a 'join' event.");
+                            }
+                            break;
+
+                        case ACTIVITY_SPECTATE:
+                            if (debugMode) {
+                                LOGGER.info("[DEBUG] Reading thread received a 'spectate' event.");
+                            }
+                            break;
+
+                        case ACTIVITY_JOIN_REQUEST:
+                            if (debugMode) {
+                                LOGGER.info("[DEBUG] Reading thread received a 'join request' event.");
+                            }
+                            break;
+
+                        case UNKNOWN:
+                            if (debugMode) {
+                                LOGGER.info("[DEBUG] Reading thread encountered an event with an unknown type: " +
+                                        json.getAsJsonPrimitive("evt").getAsString());
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+
+                    if (listener != null && json.has("cmd") && json.getAsJsonPrimitive("cmd").getAsString().equals("DISPATCH")) {
+                        try {
+                            JsonObject data = json.getAsJsonObject("data");
+                            switch (Event.of(json.getAsJsonPrimitive("evt").getAsString())) {
+                                case ACTIVITY_JOIN:
+                                    listener.onActivityJoin(instance, data.getAsJsonPrimitive("secret").getAsString());
+                                    break;
+
+                                case ACTIVITY_SPECTATE:
+                                    listener.onActivitySpectate(instance, data.getAsJsonPrimitive("secret").getAsString());
+                                    break;
+
+                                case ACTIVITY_JOIN_REQUEST:
+                                    final JsonObject u = data.getAsJsonObject("user");
+                                    final User user = new User(
+                                            u.getAsJsonPrimitive("username").getAsString(),
+                                            u.getAsJsonPrimitive("discriminator").getAsString(),
+                                            Long.parseLong(u.getAsJsonPrimitive("id").getAsString()),
+                                            u.has("avatar") ? u.getAsJsonPrimitive("avatar").getAsString() : null
+                                    );
+                                    listener.onActivityJoinRequest(instance, data.has("secret") ? data.getAsJsonObject("secret").getAsString() : null, user);
+                                    break;
+                                default:
+                                    break;
+                            }
+                        } catch (Exception e) {
+                            LOGGER.severe(String.format("Exception when handling event: %s", e));
+                        }
+                    }
+                }
+            }
+            pipe.setStatus(PipeStatus.DISCONNECTED);
+            if (listener != null)
+                listener.onClose(instance, p.getJson());
+        } catch (IOException | JsonParseException ex) {
+            LOGGER.severe(String.format("Reading thread encountered an Exception: %s", ex));
+
+            pipe.setStatus(PipeStatus.DISCONNECTED);
+            if (listener != null)
+                listener.onDisconnect(instance, ex);
+        }
     }
 
     // Private static methods

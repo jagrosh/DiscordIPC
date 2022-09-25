@@ -34,8 +34,7 @@ public interface IPCListener {
      * @param client The IPCClient sending the Packet.
      * @param packet The Packet being sent.
      */
-    default void onPacketSent(IPCClient client, Packet packet) {
-    }
+    void onPacketSent(IPCClient client, Packet packet);
 
     /**
      * Fired whenever an {@link IPCClient} receives a {@link Packet} to Discord.
@@ -43,8 +42,7 @@ public interface IPCListener {
      * @param client The IPCClient receiving the Packet.
      * @param packet The Packet being received.
      */
-    default void onPacketReceived(IPCClient client, Packet packet) {
-    }
+    void onPacketReceived(IPCClient client, Packet packet);
 
     /**
      * Fired whenever a RichPresence activity informs us that
@@ -53,8 +51,7 @@ public interface IPCListener {
      * @param client The IPCClient receiving the event.
      * @param secret The secret of the event, determined by the implementation and specified by the user.
      */
-    default void onActivityJoin(IPCClient client, String secret) {
-    }
+    void onActivityJoin(IPCClient client, String secret);
 
     /**
      * Fired whenever a RichPresence activity informs us that
@@ -63,8 +60,7 @@ public interface IPCListener {
      * @param client The IPCClient receiving the event.
      * @param secret The secret of the event, determined by the implementation and specified by the user.
      */
-    default void onActivitySpectate(IPCClient client, String secret) {
-    }
+    void onActivitySpectate(IPCClient client, String secret);
 
     /**
      * Fired whenever a RichPresence activity informs us that
@@ -77,16 +73,14 @@ public interface IPCListener {
      * @param secret The secret of the event, determined by the implementation and specified by the user.
      * @param user   The user who clicked the clicked the event, containing data on the account.
      */
-    default void onActivityJoinRequest(IPCClient client, String secret, User user) {
-    }
+    void onActivityJoinRequest(IPCClient client, String secret, User user);
 
     /**
      * Fired whenever an {@link IPCClient} is ready and connected to Discord.
      *
      * @param client The now ready IPCClient.
      */
-    default void onReady(IPCClient client) {
-    }
+    void onReady(IPCClient client);
 
     /**
      * Fired whenever an {@link IPCClient} has closed.
@@ -94,8 +88,7 @@ public interface IPCListener {
      * @param client The now closed IPCClient.
      * @param json   A {@link JsonObject} with close data.
      */
-    default void onClose(IPCClient client, JsonObject json) {
-    }
+    void onClose(IPCClient client, JsonObject json);
 
     /**
      * Fired whenever an {@link IPCClient} has disconnected,
@@ -104,6 +97,5 @@ public interface IPCListener {
      * @param client The now closed IPCClient.
      * @param t      A {@link Throwable} responsible for the disconnection.
      */
-    default void onDisconnect(IPCClient client, Throwable t) {
-    }
+    void onDisconnect(IPCClient client, Throwable t);
 }

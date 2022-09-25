@@ -1,9 +1,10 @@
+import com.google.gson.JsonObject;
 import com.jagrosh.discordipc.IPCClient;
 import com.jagrosh.discordipc.IPCListener;
+import com.jagrosh.discordipc.entities.Packet;
 import com.jagrosh.discordipc.entities.RichPresence;
+import com.jagrosh.discordipc.entities.User;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
-
-import java.time.OffsetDateTime;
 
 @SuppressWarnings("resource")
 public class Main {
@@ -17,9 +18,44 @@ public class Main {
                 RichPresence.Builder builder = new RichPresence.Builder();
                 builder.setState("Testing RPC Data...")
                         .setDetails("$DETAILS_HERE")
-                        .setStartTimestamp(OffsetDateTime.now().toEpochSecond())
+                        .setStartTimestamp(System.currentTimeMillis() / 1000L)
                         .setLargeImage("success", "Test Successful");
                 client.sendRichPresence(builder.build());
+            }
+
+            @Override
+            public void onPacketSent(IPCClient client, Packet packet) {
+                // N/A
+            }
+
+            @Override
+            public void onPacketReceived(IPCClient client, Packet packet) {
+                // N/A
+            }
+
+            @Override
+            public void onActivityJoin(IPCClient client, String secret) {
+                // N/A
+            }
+
+            @Override
+            public void onActivitySpectate(IPCClient client, String secret) {
+                // N/A
+            }
+
+            @Override
+            public void onActivityJoinRequest(IPCClient client, String secret, User user) {
+                // N/A
+            }
+
+            @Override
+            public void onClose(IPCClient client, JsonObject json) {
+                // N/A
+            }
+
+            @Override
+            public void onDisconnect(IPCClient client, Throwable t) {
+                // N/A
             }
         });
         client.connect();
