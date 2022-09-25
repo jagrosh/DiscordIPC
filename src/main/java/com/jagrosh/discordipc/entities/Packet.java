@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.jagrosh.discordipc.entities;
 
+import com.jagrosh.discordipc.IPCClient;
+import com.jagrosh.discordipc.IPCListener;
 import com.google.gson.JsonObject;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 /**
- * A data-packet received from Discord via an {@link com.jagrosh.discordipc.IPCClient IPCClient}.<br>
- * These can be handled via an implementation of {@link com.jagrosh.discordipc.IPCListener IPCListener}.
+ * A data-packet received from Discord via an {@link IPCClient IPCClient}.<br>
+ * These can be handled via an implementation of {@link IPCListener IPCListener}.
  *
  * @author John Grosh (john.a.grosh@gmail.com)
  */
@@ -87,7 +90,7 @@ public class Packet {
     }
 
     /**
-     * Gets the {@link JsonObject} value as a part of this {@link Packet}.
+     * Gets the Raw {@link JsonObject} value as a part of this {@link Packet}.
      *
      * @return The JSONObject value of this Packet.
      */
@@ -100,10 +103,18 @@ public class Packet {
         return "Pkt:" + getOp() + getJson().toString();
     }
 
+    public String toDecodedString() {
+        try {
+            return "Pkt:" + getOp() + new String(getJson().toString().getBytes(encoding));
+        } catch (UnsupportedEncodingException e) {
+            return "Pkt:" + getOp() + getJson().toString();
+        }
+    }
+
     /**
      * Discord response OpCode values that are
      * sent with response data to and from Discord
-     * and the {@link com.jagrosh.discordipc.IPCClient IPCClient}
+     * and the {@link IPCClient IPCClient}
      * connected.
      */
     public enum OpCode {

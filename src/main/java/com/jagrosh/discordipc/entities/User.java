@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.jagrosh.discordipc.entities;
+
+import com.jagrosh.discordipc.IPCClient;
+import com.jagrosh.discordipc.IPCListener;
 
 /**
  * A encapsulation of a Discord User's data provided when a
- * {@link com.jagrosh.discordipc.IPCListener IPCListener} fires
- * {@link com.jagrosh.discordipc.IPCListener#onActivityJoinRequest(com.jagrosh.discordipc.IPCClient, String, User)
+ * {@link IPCListener IPCListener} fires
+ * {@link IPCListener#onActivityJoinRequest(IPCClient, String, User)
  * onActivityJoinRequest}.
  *
  * @author John Grosh (john.a.grosh@gmail.com)
@@ -34,7 +38,7 @@ public class User {
      * Only implemented internally.
      *
      * @param name          user's name
-     * @param discriminator user's discrim
+     * @param discriminator user's discriminator
      * @param id            user's id
      * @param avatar        user's avatar hash, or {@code null} if they have no avatar
      */
@@ -115,7 +119,7 @@ public class User {
      * @return The Users {@link DefaultAvatar} avatar URL.
      */
     public String getDefaultAvatarUrl() {
-        return "https://discordapp.com/assets/" + getDefaultAvatarId() + ".png";
+        return "https://discord.com/assets/" + getDefaultAvatarId() + ".png";
     }
 
     /**
@@ -129,7 +133,7 @@ public class User {
     }
 
     /**
-     * Gets whether or not this User is a bot.<p>
+     * Gets whether or not this User is a bot.
      * <p>
      * While, at the time of writing this documentation, bots cannot
      * use Rich Presence features, there may be a time in the future
@@ -142,7 +146,7 @@ public class User {
     }
 
     /**
-     * Gets the User as a discord formatted mention.<p>
+     * Gets the User as a discord formatted mention.
      * <p>
      * {@code <@SNOWFLAKE_ID> }
      *

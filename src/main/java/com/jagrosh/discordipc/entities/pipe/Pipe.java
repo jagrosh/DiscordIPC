@@ -16,8 +16,6 @@
 
 package com.jagrosh.discordipc.entities.pipe;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.jagrosh.discordipc.IPCClient;
 import com.jagrosh.discordipc.IPCListener;
@@ -26,7 +24,10 @@ import com.jagrosh.discordipc.entities.DiscordBuild;
 import com.jagrosh.discordipc.entities.Packet;
 import com.jagrosh.discordipc.entities.User;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
@@ -35,6 +36,7 @@ public abstract class Pipe {
     private static final int VERSION = 1;
     // a list of system property keys to get IPC file from different unix systems.
     private final static String[] unixPaths = {"XDG_RUNTIME_DIR", "TMPDIR", "TMP", "TEMP"};
+    private final static String[] unixFolderPaths = {"/snap.discord", "/app/com.discordapp.Discord"};
     final IPCClient ipcClient;
     private final HashMap<String, Callback> callbacks;
     PipeStatus status = PipeStatus.CONNECTING;
@@ -58,56 +60,67 @@ public abstract class Pipe {
         // store some files so we can get the preferred client
         Pipe[] open = new Pipe[DiscordBuild.values().length];
         for (int i = 0; i < 10; i++) {
+            String location = getPipeLocation(i);
+            if (ipcClient.isDebugMode()) {
+                ipcClient.getLogger().info(String.format("[DEBUG] Searching for IPC Pipe: \"%s\"", location));
+            }
+
             try {
-                String location = getPipeLocation(i);
-                if (ipcClient.isDebugMode()) {
-                    System.out.println(String.format("Searching for IPC: %s", location));
-                }
-                pipe = createPipe(ipcClient, callbacks, location);
-
-                if (pipe != null) {
-                    JsonObject finalObject = new JsonObject();
-
-                    finalObject.addProperty("v", VERSION);
-                    finalObject.addProperty("client_id", Long.toString(clientId));
-
-                    pipe.send(Packet.OpCode.HANDSHAKE, finalObject, null);
-
-                    Packet p = pipe.read(); // this is a valid client at this point
-
-                    final JsonObject parsedData = JsonParser.parseString(p.getJson().getAsJsonPrimitive("").getAsString()).getAsJsonObject();
-                    final JsonObject data = parsedData.getAsJsonObject("data");
-                    final JsonObject userData = data.getAsJsonObject("user");
-
-                    pipe.build = DiscordBuild.from(data
-                            .getAsJsonObject("config")
-                            .get("api_endpoint").getAsString());
-
-                    pipe.currentUser = new User(
-                            userData.getAsJsonPrimitive("username").getAsString(),
-                            userData.getAsJsonPrimitive("discriminator").getAsString(),
-                            Long.parseLong(userData.getAsJsonPrimitive("id").getAsString()),
-                            userData.has("avatar") ? userData.getAsJsonPrimitive("avatar").getAsString() : null
-                    );
-
+                File fileLocation = new File(location);
+                if (fileLocation.exists()) {
                     if (ipcClient.isDebugMode()) {
-                        System.out.println(String.format("Found a valid client (%s) with packet: %s", pipe.build.name(), p.toString()));
-                        System.out.println(String.format("Found a valid user (%s) with id: %s", pipe.currentUser.getName(), pipe.currentUser.getId()));
+                        ipcClient.getLogger().info(String.format("[DEBUG] Found valid file, attempting connection to IPC: \"%s\"", location));
                     }
+                    pipe = createPipe(ipcClient, callbacks, fileLocation);
 
-                    // we're done if we found our first choice
-                    if (pipe.build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0]) {
+                    if (pipe != null) {
+                        JsonObject finalObject = new JsonObject();
+
+                        finalObject.addProperty("v", VERSION);
+                        finalObject.addProperty("client_id", Long.toString(clientId));
+
+                        pipe.send(Packet.OpCode.HANDSHAKE, finalObject);
+
+                        Packet p = pipe.read(); // this is a valid client at this point
+
+                        final JsonObject parsedData = p.getJson();
+                        final JsonObject data = parsedData.getAsJsonObject("data");
+                        final JsonObject userData = data.getAsJsonObject("user");
+
+                        pipe.build = DiscordBuild.from(data
+                                .getAsJsonObject("config")
+                                .get("api_endpoint").getAsString());
+
+                        pipe.currentUser = new User(
+                                userData.getAsJsonPrimitive("username").getAsString(),
+                                userData.getAsJsonPrimitive("discriminator").getAsString(),
+                                Long.parseLong(userData.getAsJsonPrimitive("id").getAsString()),
+                                userData.has("avatar") && userData.get("avatar").isJsonPrimitive() ? userData.getAsJsonPrimitive("avatar").getAsString() : null
+                        );
+
                         if (ipcClient.isDebugMode()) {
-                            System.out.println(String.format("Found preferred client: %s", pipe.build.name()));
+                            ipcClient.getLogger().info(String.format("[DEBUG] Found a valid client (%s) with packet: %s", pipe.build.name(), p));
+                            ipcClient.getLogger().info(String.format("[DEBUG] Found a valid user (%s) with id: %s", pipe.currentUser.getName(), pipe.currentUser.getId()));
                         }
-                        break;
+
+                        // we're done if we found our first choice
+                        if (pipe.build == preferredOrder[0] || DiscordBuild.ANY == preferredOrder[0]) {
+                            if (ipcClient.isDebugMode()) {
+                                ipcClient.getLogger().info(String.format("[DEBUG] Found preferred client: %s", pipe.build.name()));
+                            }
+                            break;
+                        }
+
+                        open[pipe.build.ordinal()] = pipe; // didn't find first choice yet, so store what we have
+                        open[DiscordBuild.ANY.ordinal()] = pipe; // also store in 'any' for use later
+
+                        pipe.build = null;
+                        pipe = null;
                     }
-
-                    open[pipe.build.ordinal()] = pipe; // didn't find first choice yet, so store what we have
-                    open[DiscordBuild.ANY.ordinal()] = pipe; // also store in 'any' for use later
-
-                    pipe.build = null;
-                    pipe = null;
+                } else {
+                    if (ipcClient.isDebugMode()) {
+                        ipcClient.getLogger().info(String.format("[DEBUG] Unable to locate IPC Pipe: \"%s\"", location));
+                    }
                 }
             } catch (IOException | JsonParseException ex) {
                 pipe = null;
@@ -120,7 +133,7 @@ public abstract class Pipe {
             for (int i = 1; i < preferredOrder.length; i++) {
                 DiscordBuild cb = preferredOrder[i];
                 if (ipcClient.isDebugMode()) {
-                    System.out.println(String.format("Looking for client build: %s", cb.name()));
+                    ipcClient.getLogger().info(String.format("[DEBUG] Looking for client build: %s", cb.name()));
                 }
 
                 if (open[cb.ordinal()] != null) {
@@ -137,7 +150,7 @@ public abstract class Pipe {
                     } else pipe.build = cb;
 
                     if (ipcClient.isDebugMode()) {
-                        System.out.println(String.format("Found preferred client: %s", pipe.build.name()));
+                        ipcClient.getLogger().info(String.format("[DEBUG] Found preferred client: %s", pipe.build.name()));
                     }
                     break;
                 }
@@ -157,7 +170,7 @@ public abstract class Pipe {
                     // This isn't really important to applications and better
                     // as debug info
                     if (ipcClient.isDebugMode()) {
-                        System.out.println(String.format("Failed to close an open IPC pipe: %s", ex));
+                        ipcClient.getLogger().info(String.format("[DEBUG] Failed to close an open IPC pipe: %s", ex));
                     }
                 }
             }
@@ -168,7 +181,7 @@ public abstract class Pipe {
         return pipe;
     }
 
-    private static Pipe createPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, String location) {
+    private static Pipe createPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, File location) {
         String osName = System.getProperty("os.name").toLowerCase();
 
         if (osName.contains("win")) {
@@ -176,7 +189,7 @@ public abstract class Pipe {
             return attemptedPipe.file != null ? attemptedPipe : null;
         } else if (osName.contains("linux") || osName.contains("mac")) {
             try {
-                return new UnixPipe(ipcClient, callbacks, location);
+                return osName.contains("mac") ? new MacPipe(ipcClient, callbacks, location) : new UnixPipe(ipcClient, callbacks, location);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -197,21 +210,31 @@ public abstract class Pipe {
     /**
      * Finds the IPC location in the current system.
      *
-     * @param i Index to try getting the IPC at.
+     * @param index The index to try getting the IPC at.
      * @return The IPC location.
      */
-    private static String getPipeLocation(int i) {
+    @SuppressWarnings("ConstantConditions")
+    private static String getPipeLocation(int index) {
+        String tmpPath = null, pipePath = "discord-ipc-" + index;
         if (System.getProperty("os.name").contains("Win"))
-            return "\\\\?\\pipe\\discord-ipc-" + i;
-        String tmppath = null;
+            return "\\\\?\\pipe\\" + pipePath;
         for (String str : unixPaths) {
-            tmppath = System.getenv(str);
-            if (tmppath != null)
+            tmpPath = System.getenv(str);
+            if (tmpPath != null)
                 break;
         }
-        if (tmppath == null)
-            tmppath = "/tmp";
-        return tmppath + "/discord-ipc-" + i;
+        if (tmpPath == null) {
+            tmpPath = "/tmp";
+        }
+        for (String str : unixFolderPaths) {
+            String folderPath = tmpPath + str;
+            File folderFile = new File(folderPath);
+            if (folderFile.exists() && folderFile.isDirectory() && folderFile.list().length > 0) {
+                tmpPath = folderPath;
+                break;
+            }
+        }
+        return tmpPath + "/" + pipePath;
     }
 
     /**
@@ -230,15 +253,44 @@ public abstract class Pipe {
                 callbacks.put(nonce, callback);
             write(p.toBytes());
             if (ipcClient.isDebugMode()) {
-                System.out.println(String.format("Sent packet: %s", p.toString()));
+                ipcClient.getLogger().info(String.format("[DEBUG] Sent packet: %s", p.toDecodedString()));
             }
 
             if (listener != null)
                 listener.onPacketSent(ipcClient, p);
         } catch (IOException ex) {
-            System.out.println("Encountered an IOException while sending a packet and disconnected!");
+            ipcClient.getLogger().severe("Encountered an IOException while sending a packet and disconnected!");
             status = PipeStatus.DISCONNECTED;
         }
+    }
+
+    /**
+     * Sends json with the given {@link Packet.OpCode}.
+     *
+     * @param op   The {@link Packet.OpCode} to send data with.
+     * @param data The data to send.
+     */
+    public void send(Packet.OpCode op, JsonObject data) {
+        send(op, data, null);
+    }
+
+    /**
+     * Receives a {@link Packet} with the given {@link Packet.OpCode} and byte data.
+     *
+     * @param op   The {@link Packet.OpCode} to receive data with.
+     * @param data The data to parse with.
+     */
+    public Packet receive(Packet.OpCode op, byte[] data) {
+        JsonObject packetData = new JsonParser().parse(new String(data)).getAsJsonObject();
+        Packet p = new Packet(op, packetData, ipcClient.getEncoding());
+
+        if (ipcClient.isDebugMode()) {
+            ipcClient.getLogger().info(String.format("[DEBUG] Received packet: %s", p));
+        }
+
+        if (listener != null)
+            listener.onPacketReceived(ipcClient, p);
+        return p;
     }
 
     /**
@@ -252,6 +304,10 @@ public abstract class Pipe {
     public abstract Packet read() throws IOException, JsonParseException;
 
     public abstract void write(byte[] b) throws IOException;
+
+    public abstract void registerApp(String applicationId, String command);
+
+    public abstract void registerSteamGame(String applicationId, String steamId);
 
     public PipeStatus getStatus() {
         return status;

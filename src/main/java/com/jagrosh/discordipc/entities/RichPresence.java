@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.jagrosh.discordipc.entities;
 
 import com.google.gson.JsonArray;
@@ -38,15 +39,17 @@ public class RichPresence {
     private final String partyId;
     private final int partySize;
     private final int partyMax;
+    private final int partyPrivacy;
     private final String matchSecret;
     private final String joinSecret;
     private final String spectateSecret;
+    private final JsonArray buttons;
     private final boolean instance;
 
     public RichPresence(String state, String details, long startTimestamp, long endTimestamp,
                         String largeImageKey, String largeImageText, String smallImageKey, String smallImageText,
-                        String partyId, int partySize, int partyMax, String matchSecret, String joinSecret,
-                        String spectateSecret, boolean instance) {
+                        String partyId, int partySize, int partyMax, int partyPrivacy, String matchSecret, String joinSecret,
+                        String spectateSecret, JsonArray buttons, boolean instance) {
         this.state = state;
         this.details = details;
         this.startTimestamp = startTimestamp;
@@ -58,9 +61,11 @@ public class RichPresence {
         this.partyId = partyId;
         this.partySize = partySize;
         this.partyMax = partyMax;
+        this.partyPrivacy = partyPrivacy;
         this.matchSecret = matchSecret;
         this.joinSecret = joinSecret;
         this.spectateSecret = spectateSecret;
+        this.buttons = buttons;
         this.instance = instance;
     }
 
@@ -104,8 +109,11 @@ public class RichPresence {
             }
         }
 
-        if (partyId != null) {
-            party.addProperty("id", partyId);
+        if ((partyId != null && !partyId.isEmpty()) ||
+                (partySize > 0 && partyMax > 0) || partyPrivacy >= 0) {
+            if (partyId != null && !partyId.isEmpty()) {
+                party.addProperty("id", partyId);
+            }
 
             JsonArray partyData = new JsonArray();
 
@@ -117,6 +125,10 @@ public class RichPresence {
                 }
             }
             party.add("size", partyData);
+
+            if (partyPrivacy >= 0) {
+                party.add("privacy", new JsonPrimitive(partyPrivacy));
+            }
         }
 
         if (joinSecret != null && !joinSecret.isEmpty()) {
@@ -147,16 +159,27 @@ public class RichPresence {
         if (secrets.has("join") || secrets.has("spectate") || secrets.has("match")) {
             finalObject.add("secrets", secrets);
         }
+        if (buttons != null && !buttons.isJsonNull() && buttons.size() > 0 && buttons.size() < 3) {
+            finalObject.add("buttons", buttons);
+        }
         finalObject.addProperty("instance", instance);
 
         return finalObject;
+    }
+
+    public String toDecodedJson(String encoding) {
+        try {
+            return new String(toJson().toString().getBytes(encoding));
+        } catch (Exception ex) {
+            return toJson().toString();
+        }
     }
 
     /**
      * A chain builder for a {@link RichPresence} object.
      *
      * <p>An accurate description of each field and it's functions can be found
-     * <a href="https://discordapp.com/developers/docs/rich-presence/how-to#updating-presence-update-presence-payload-fields">here</a>
+     * <a href="https://discord.com/developers/docs/rich-presence/how-to#updating-presence-update-presence-payload-fields">here</a>
      */
     public static class Builder {
         private String state;
@@ -170,9 +193,11 @@ public class RichPresence {
         private String partyId;
         private int partySize;
         private int partyMax;
+        private int partyPrivacy;
         private String matchSecret;
         private String joinSecret;
         private String spectateSecret;
+        private JsonArray buttons;
         private boolean instance;
 
         /**
@@ -183,8 +208,8 @@ public class RichPresence {
         public RichPresence build() {
             return new RichPresence(state, details, startTimestamp, endTimestamp,
                     largeImageKey, largeImageText, smallImageKey, smallImageText,
-                    partyId, partySize, partyMax, matchSecret, joinSecret,
-                    spectateSecret, instance);
+                    partyId, partySize, partyMax, partyPrivacy, matchSecret, joinSecret,
+                    spectateSecret, buttons, instance);
         }
 
         /**
@@ -235,7 +260,7 @@ public class RichPresence {
          * Sets the key of the uploaded image for the large profile artwork, as well as
          * the text tooltip shown when a cursor hovers over it.
          *
-         * <p>These can be configured in the <a href="https://discordapp.com/developers/applications/me">applications</a>
+         * <p>These can be configured in the <a href="https://discord.com/developers/applications/me">applications</a>
          * page on the discord website.
          *
          * @param largeImageKey  A key to an image to display.
@@ -251,7 +276,7 @@ public class RichPresence {
         /**
          * Sets the key of the uploaded image for the large profile artwork.
          *
-         * <p>These can be configured in the <a href="https://discordapp.com/developers/applications/me">applications</a>
+         * <p>These can be configured in the <a href="https://discord.com/developers/applications/me">applications</a>
          * page on the discord website.
          *
          * @param largeImageKey A key to an image to display.
@@ -265,7 +290,7 @@ public class RichPresence {
          * Sets the key of the uploaded image for the small profile artwork, as well as
          * the text tooltip shown when a cursor hovers over it.
          *
-         * <p>These can be configured in the <a href="https://discordapp.com/developers/applications/me">applications</a>
+         * <p>These can be configured in the <a href="https://discord.com/developers/applications/me">applications</a>
          * page on the discord website.
          *
          * @param smallImageKey  A key to an image to display.
@@ -281,7 +306,7 @@ public class RichPresence {
         /**
          * Sets the key of the uploaded image for the small profile artwork.
          *
-         * <p>These can be configured in the <a href="https://discordapp.com/developers/applications/me">applications</a>
+         * <p>These can be configured in the <a href="https://discord.com/developers/applications/me">applications</a>
          * page on the discord website.
          *
          * @param smallImageKey A key to an image to display.
@@ -298,15 +323,17 @@ public class RichPresence {
          * <br>The {@code partySize} is the current size of the player's party.
          * <br>The {@code partyMax} is the maximum number of player's allowed in the party.
          *
-         * @param partyId   The ID of the player's party.
-         * @param partySize The current size of the player's party.
-         * @param partyMax  The maximum number of player's allowed in the party.
+         * @param partyId      The ID of the player's party.
+         * @param partySize    The current size of the player's party.
+         * @param partyMax     The maximum number of player's allowed in the party.
+         * @param partyPrivacy The privacy level for the player's party.
          * @return This Builder.
          */
-        public Builder setParty(String partyId, int partySize, int partyMax) {
+        public Builder setParty(String partyId, int partySize, int partyMax, int partyPrivacy) {
             this.partyId = partyId;
             this.partySize = partySize;
             this.partyMax = partyMax;
+            this.partyPrivacy = partyPrivacy;
             return this;
         }
 
@@ -340,6 +367,18 @@ public class RichPresence {
          */
         public Builder setSpectateSecret(String spectateSecret) {
             this.spectateSecret = spectateSecret;
+            return this;
+        }
+
+        /**
+         * Sets the button array to be used within the RichPresence
+         * <p>Must be a format of {'label': "...", 'url': "..."} with a max length of 2</p>
+         *
+         * @param buttons The new array of button objects to use
+         * @return This Builder.
+         */
+        public Builder setButtons(JsonArray buttons) {
+            this.buttons = buttons;
             return this;
         }
 

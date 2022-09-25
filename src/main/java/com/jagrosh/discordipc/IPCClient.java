@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.jagrosh.discordipc;
 
 import com.google.gson.JsonObject;
@@ -27,20 +28,21 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 /**
  * Represents a Discord IPC Client that can send and receive
- * Rich Presence data.<p>
+ * Rich Presence data.
  * <p>
  * The ID provided should be the <b>client ID of the particular
  * application providing Rich Presence</b>, which can be found
- * <a href=https://discordapp.com/developers/applications/me>here</a>.<p>
+ * <a href=https://discord.com/developers/applications/me>here</a>.
  * <p>
- * When initially created using {@link #IPCClient(long)} the client will
+ * When initially created using {@link #IPCClient(long, boolean, String)} the client will
  * be inactive awaiting a call to {@link #connect(DiscordBuild...)}.<br>
  * After the call, this client can send and receive Rich Presence data
  * to and from discord via {@link #sendRichPresence(RichPresence)} and
- * {@link #setListener(IPCListener)} respectively.<p>
+ * {@link #setListener(IPCListener)} respectively.
  * <p>
  * Please be mindful that the client created is initially unconnected,
  * and calling any methods that exchange data between this client and
@@ -52,9 +54,11 @@ import java.util.HashMap;
  * @author John Grosh (john.a.grosh@gmail.com)
  */
 public final class IPCClient implements Closeable {
+    private final Logger LOGGER = Logger.getLogger("IPC-Client");
     private final long clientId;
-    private final boolean debugMode;
+    private final boolean debugMode, verboseLogging, autoRegister;
     private final HashMap<String, Callback> callbacks = new HashMap<>();
+    private final String applicationId, optionalSteamId;
     private volatile Pipe pipe;
     private IPCListener listener = null;
     private Thread readThread = null;
@@ -64,25 +68,117 @@ public final class IPCClient implements Closeable {
      * Constructs a new IPCClient using the provided {@code clientId}.<br>
      * This is initially unconnected to Discord.
      *
-     * @param clientId The Rich Presence application's client ID, which can be found
-     *                 <a href=https://discordapp.com/developers/applications/me>here</a>
+     * @param clientId      The Rich Presence application's client ID, which can be found
+     *                      <a href=https://discord.com/developers/applications/me>here</a>
+     * @param autoRegister  Whether to register as an application with discord
+     * @param applicationId The application id to register with, usually the client id in string form
      */
-    public IPCClient(long clientId) {
+    public IPCClient(long clientId, boolean autoRegister, String applicationId) {
         this.clientId = clientId;
+        this.applicationId = applicationId;
+        this.autoRegister = autoRegister;
+        this.optionalSteamId = null;
         this.debugMode = false;
+        this.verboseLogging = false;
     }
 
     /**
      * Constructs a new IPCClient using the provided {@code clientId}.<br>
      * This is initially unconnected to Discord.
      *
-     * @param clientId  The Rich Presence application's client ID, which can be found
-     *                  <a href=https://discordapp.com/developers/applications/me>here</a>
-     * @param debugMode Whether Debug Logging should be shown for this client
+     * @param clientId        The Rich Presence application's client ID, which can be found
+     *                        <a href=https://discord.com/developers/applications/me>here</a>
+     * @param autoRegister    Whether to register as an application with discord
+     * @param applicationId   The application id to register with, usually the client id in string form
+     * @param optionalSteamId The steam id to register with, registers as a steam game if present
      */
-    public IPCClient(long clientId, boolean debugMode) {
+    public IPCClient(long clientId, boolean autoRegister, String applicationId, String optionalSteamId) {
+        this.clientId = clientId;
+        this.applicationId = applicationId;
+        this.autoRegister = autoRegister;
+        this.optionalSteamId = optionalSteamId;
+        this.debugMode = false;
+        this.verboseLogging = false;
+    }
+
+    /**
+     * Constructs a new IPCClient using the provided {@code clientId}.<br>
+     * This is initially unconnected to Discord.
+     *
+     * @param clientId      The Rich Presence application's client ID, which can be found
+     *                      <a href=https://discord.com/developers/applications/me>here</a>
+     * @param debugMode     Whether Debug Logging should be shown for this client
+     * @param autoRegister  Whether to register as an application with discord
+     * @param applicationId The application id to register with, usually the client id in string form
+     */
+    public IPCClient(long clientId, boolean debugMode, boolean autoRegister, String applicationId) {
         this.clientId = clientId;
         this.debugMode = debugMode;
+        this.applicationId = applicationId;
+        this.autoRegister = autoRegister;
+        this.optionalSteamId = null;
+        this.verboseLogging = false;
+    }
+
+    /**
+     * Constructs a new IPCClient using the provided {@code clientId}.<br>
+     * This is initially unconnected to Discord.
+     *
+     * @param clientId        The Rich Presence application's client ID, which can be found
+     *                        <a href=https://discord.com/developers/applications/me>here</a>
+     * @param debugMode       Whether Debug Logging should be shown for this client
+     * @param autoRegister    Whether to register as an application with discord
+     * @param applicationId   The application id to register with, usually the client id in string form
+     * @param optionalSteamId The steam id to register with, registers as a steam game if present
+     */
+    public IPCClient(long clientId, boolean debugMode, boolean autoRegister, String applicationId, String optionalSteamId) {
+        this.clientId = clientId;
+        this.debugMode = debugMode;
+        this.applicationId = applicationId;
+        this.autoRegister = autoRegister;
+        this.optionalSteamId = optionalSteamId;
+        this.verboseLogging = false;
+    }
+
+    /**
+     * Constructs a new IPCClient using the provided {@code clientId}.<br>
+     * This is initially unconnected to Discord.
+     *
+     * @param clientId       The Rich Presence application's client ID, which can be found
+     *                       <a href=https://discord.com/developers/applications/me>here</a>
+     * @param debugMode      Whether Debug Logging should be shown for this client
+     * @param verboseLogging Whether excess/deeper-rooted logging should be shown
+     * @param autoRegister   Whether to register as an application with discord
+     * @param applicationId  The application id to register with, usually the client id in string form
+     */
+    public IPCClient(long clientId, boolean debugMode, boolean verboseLogging, boolean autoRegister, String applicationId) {
+        this.clientId = clientId;
+        this.debugMode = debugMode;
+        this.verboseLogging = verboseLogging;
+        this.applicationId = applicationId;
+        this.autoRegister = autoRegister;
+        this.optionalSteamId = null;
+    }
+
+    /**
+     * Constructs a new IPCClient using the provided {@code clientId}.<br>
+     * This is initially unconnected to Discord.
+     *
+     * @param clientId        The Rich Presence application's client ID, which can be found
+     *                        <a href=https://discord.com/developers/applications/me>here</a>
+     * @param debugMode       Whether Debug Logging should be shown for this client
+     * @param verboseLogging  Whether excess/deeper-rooted logging should be shown
+     * @param autoRegister    Whether to register as an application with discord
+     * @param applicationId   The application id to register with, usually the client id in string form
+     * @param optionalSteamId The steam id to register with, registers as a steam game if present
+     */
+    public IPCClient(long clientId, boolean debugMode, boolean verboseLogging, boolean autoRegister, String applicationId, String optionalSteamId) {
+        this.clientId = clientId;
+        this.debugMode = debugMode;
+        this.verboseLogging = verboseLogging;
+        this.applicationId = applicationId;
+        this.autoRegister = autoRegister;
+        this.optionalSteamId = optionalSteamId;
     }
 
     /**
@@ -96,10 +192,19 @@ public final class IPCClient implements Closeable {
     }
 
     /**
-     * Sets this IPCClient's {@link IPCListener} to handle received events.<p>
+     * Retrieves this IPCClient's {@link Logger} to handle received events.
+     *
+     * @return the current {@link Logger} instance
+     */
+    public Logger getLogger() {
+        return this.LOGGER;
+    }
+
+    /**
+     * Sets this IPCClient's {@link IPCListener} to handle received events.
      * <p>
      * A single IPCClient can only have one of these set at any given time.<br>
-     * Setting this {@code null} will remove the currently active one.<p>
+     * Setting this {@code null} will remove the currently active one.
      * <p>
      * This can be set safely before a call to {@link #connect(DiscordBuild...)}
      * is made.
@@ -114,6 +219,38 @@ public final class IPCClient implements Closeable {
     }
 
     /**
+     * Gets the application id associated with this IPCClient
+     * <p>
+     * This must be set upon initialization and is a required variable
+     *
+     * @return applicationId
+     */
+    public String getApplicationId() {
+        return applicationId;
+    }
+
+    /**
+     * Gets the steam id associated with this IPCClient, if any
+     * <p>
+     * This must be set upon initialization and is an optional variable<br>
+     * If set and autoRegister is true, then this client will register as a steam game
+     *
+     * @return optionalSteamId
+     */
+    public String getOptionalSteamId() {
+        return optionalSteamId;
+    }
+
+    /**
+     * Gets whether the client will register a run command with discord
+     *
+     * @return autoRegister
+     */
+    public boolean isAutoRegister() {
+        return autoRegister;
+    }
+
+    /**
      * Gets encoding to send packets in.<p>
      * Default: UTF-8
      *
@@ -124,10 +261,10 @@ public final class IPCClient implements Closeable {
     }
 
     /**
-     * Sets the encoding to send packets in.<p>
+     * Sets the encoding to send packets in.
      * <p>
      * This can be set safely before a call to {@link #connect(DiscordBuild...)}
-     * is made.<p>
+     * is made.
      * <p>
      * Default: UTF-8
      *
@@ -157,6 +294,16 @@ public final class IPCClient implements Closeable {
     }
 
     /**
+     * Gets whether this IPCClient will show verbose logging
+     * Default: False
+     *
+     * @return The Debug Mode Status
+     */
+    public boolean isVerboseLogging() {
+        return verboseLogging;
+    }
+
+    /**
      * Opens the connection between the IPCClient and Discord.<p>
      *
      * <b>This must be called before any data is exchanged between the
@@ -173,20 +320,37 @@ public final class IPCClient implements Closeable {
 
         pipe = Pipe.openPipe(this, clientId, callbacks, preferredOrder);
 
-        if (debugMode) {
-            System.out.println("Client is now connected and ready!");
+        if (isAutoRegister()) {
+            try {
+                if (optionalSteamId != null && !optionalSteamId.isEmpty())
+                    this.registerSteamGame(getApplicationId(), optionalSteamId);
+                else
+                    this.registerApp(getApplicationId(), null);
+            } catch (Exception | Error ex) {
+                if (debugMode) {
+                    ex.printStackTrace();
+                } else {
+                    LOGGER.severe("Unable to register application, enable debug mode for trace...");
+                }
+            }
         }
 
-        if (listener != null)
+        if (debugMode) {
+            LOGGER.info("[DEBUG] Client is now connected and ready!");
+        }
+
+        if (listener != null) {
             listener.onReady(this);
+            pipe.setListener(listener);
+        }
         startReading();
     }
 
     /**
-     * Sends a {@link RichPresence} to the Discord client.<p>
+     * Sends a {@link RichPresence} to the Discord client.
      * <p>
      * This is where the IPCClient will officially display
-     * a Rich Presence in the Discord client.<p>
+     * a Rich Presence in the Discord client.
      * <p>
      * Sending this again will overwrite the last provided
      * {@link RichPresence}.
@@ -201,10 +365,10 @@ public final class IPCClient implements Closeable {
     }
 
     /**
-     * Sends a {@link RichPresence} to the Discord client.<p>
+     * Sends a {@link RichPresence} to the Discord client.
      * <p>
      * This is where the IPCClient will officially display
-     * a Rich Presence in the Discord client.<p>
+     * a Rich Presence in the Discord client.
      * <p>
      * Sending this again will overwrite the last provided
      * {@link RichPresence}.
@@ -219,7 +383,7 @@ public final class IPCClient implements Closeable {
         checkConnected(true);
 
         if (debugMode) {
-            System.out.println("Sending RichPresence to discord: " + (presence == null ? null : presence.toJson().toString()));
+            LOGGER.info("[DEBUG] Sending RichPresence to discord: " + (presence == null ? null : presence.toDecodedJson(encoding)));
         }
 
         // Setup and Send JsonObject Data Representing an RPC Update
@@ -233,6 +397,28 @@ public final class IPCClient implements Closeable {
 
         finalObject.add("args", args);
         pipe.send(OpCode.FRAME, finalObject, callback);
+    }
+
+    /**
+     * Manually register a steam game
+     *
+     * @param applicationId   Application ID
+     * @param optionalSteamId Application Steam ID
+     */
+    public void registerSteamGame(String applicationId, String optionalSteamId) {
+        if (this.pipe != null)
+            this.pipe.registerSteamGame(applicationId, optionalSteamId);
+    }
+
+    /**
+     * Manually register an application
+     *
+     * @param applicationId Application ID
+     * @param command       Command to run the application
+     */
+    public void registerApp(String applicationId, String command) {
+        if (this.pipe != null)
+            this.pipe.registerApp(applicationId, command);
     }
 
     /**
@@ -270,7 +456,7 @@ public final class IPCClient implements Closeable {
             throw new IllegalStateException("Cannot subscribe to " + sub + " event!");
 
         if (debugMode) {
-            System.out.println(String.format("Subscribing to Event: %s", sub.name()));
+            LOGGER.info(String.format("[DEBUG] Subscribing to Event: %s", sub.name()));
         }
 
         JsonObject pipeData = new JsonObject();
@@ -280,12 +466,19 @@ public final class IPCClient implements Closeable {
         pipe.send(OpCode.FRAME, pipeData, callback);
     }
 
+    /**
+     * Responds to a {@link Event#ACTIVITY_JOIN_REQUEST} from a requester {@link User}.
+     *
+     * @param user         The {@link User} to respond to
+     * @param approvalMode The {@link ApprovalMode} to respond to the requester with
+     * @param callback     The {@link Callback} to handle success or failure
+     */
     public void respondToJoinRequest(User user, ApprovalMode approvalMode, Callback callback) {
         checkConnected(true);
 
         if (user != null) {
             if (debugMode) {
-                System.out.println(String.format("Sending response to %s as %s", user.getName(), approvalMode.name()));
+                LOGGER.info(String.format("[DEBUG] Sending response to %s as %s", user.getName(), approvalMode.name()));
             }
 
             JsonObject pipeData = new JsonObject();
@@ -300,6 +493,15 @@ public final class IPCClient implements Closeable {
         }
     }
 
+    /**
+     * Responds to a {@link Event#ACTIVITY_JOIN_REQUEST} from a requester {@link User}.
+     *
+     * @param user         The {@link User} to respond to
+     * @param approvalMode The {@link ApprovalMode} to respond to the requester with
+     */
+    public void respondToJoinRequest(User user, ApprovalMode approvalMode) {
+        respondToJoinRequest(user, approvalMode, null);
+    }
 
     /**
      * Gets the IPCClient's current {@link PipeStatus}.
@@ -327,18 +529,18 @@ public final class IPCClient implements Closeable {
             pipe.close();
         } catch (IOException e) {
             if (debugMode) {
-                System.out.println(String.format("Failed to close pipe: %s", e));
+                LOGGER.info(String.format("[DEBUG] Failed to close pipe: %s", e));
             }
         }
     }
 
     /**
-     * Gets the IPCClient's {@link DiscordBuild}.<p>
+     * Gets the IPCClient's {@link DiscordBuild}.
      * <p>
      * This is always the first specified DiscordBuild when
      * making a call to {@link #connect(DiscordBuild...)},
      * or the first one found if none or {@link DiscordBuild#ANY}
-     * is specified.<p>
+     * is specified.
      * <p>
      * Note that specifying ANY doesn't mean that this will return
      * ANY. In fact this method should <b>never</b> return the
@@ -415,27 +617,29 @@ public final class IPCClient implements Closeable {
 
                             case ACTIVITY_JOIN:
                                 if (debugMode) {
-                                    System.out.println("Reading thread received a 'join' event.");
+                                    LOGGER.info("[DEBUG] Reading thread received a 'join' event.");
                                 }
                                 break;
 
                             case ACTIVITY_SPECTATE:
                                 if (debugMode) {
-                                    System.out.println("Reading thread received a 'spectate' event.");
+                                    LOGGER.info("[DEBUG] Reading thread received a 'spectate' event.");
                                 }
                                 break;
 
                             case ACTIVITY_JOIN_REQUEST:
                                 if (debugMode) {
-                                    System.out.println("Reading thread received a 'join request' event.");
+                                    LOGGER.info("[DEBUG] Reading thread received a 'join request' event.");
                                 }
                                 break;
 
                             case UNKNOWN:
                                 if (debugMode) {
-                                    System.out.println("Reading thread encountered an event with an unknown type: " +
+                                    LOGGER.info("[DEBUG] Reading thread encountered an event with an unknown type: " +
                                             json.getAsJsonPrimitive("evt").getAsString());
                                 }
+                                break;
+                            default:
                                 break;
                         }
 
@@ -444,11 +648,11 @@ public final class IPCClient implements Closeable {
                                 JsonObject data = json.getAsJsonObject("data");
                                 switch (Event.of(json.getAsJsonPrimitive("evt").getAsString())) {
                                     case ACTIVITY_JOIN:
-                                        listener.onActivityJoin(localInstance, data.getAsJsonObject("secret").getAsString());
+                                        listener.onActivityJoin(localInstance, data.getAsJsonPrimitive("secret").getAsString());
                                         break;
 
                                     case ACTIVITY_SPECTATE:
-                                        listener.onActivitySpectate(localInstance, data.getAsJsonObject("secret").getAsString());
+                                        listener.onActivitySpectate(localInstance, data.getAsJsonPrimitive("secret").getAsString());
                                         break;
 
                                     case ACTIVITY_JOIN_REQUEST:
@@ -461,9 +665,11 @@ public final class IPCClient implements Closeable {
                                         );
                                         listener.onActivityJoinRequest(localInstance, data.has("secret") ? data.getAsJsonObject("secret").getAsString() : null, user);
                                         break;
+                                    default:
+                                        break;
                                 }
                             } catch (Exception e) {
-                                System.out.println(String.format("Exception when handling event: %s", e));
+                                LOGGER.severe(String.format("Exception when handling event: %s", e));
                             }
                         }
                     }
@@ -472,10 +678,7 @@ public final class IPCClient implements Closeable {
                 if (listener != null)
                     listener.onClose(localInstance, p.getJson());
             } catch (IOException | JsonParseException ex) {
-                if (ex instanceof IOException)
-                    System.out.println(String.format("Reading thread encountered an IOException: %s", ex));
-                else
-                    System.out.println(String.format("Reading thread encountered an JSONException: %s", ex));
+                LOGGER.severe(String.format("Reading thread encountered an Exception: %s", ex));
 
                 pipe.setStatus(PipeStatus.DISCONNECTED);
                 if (listener != null)
@@ -484,7 +687,7 @@ public final class IPCClient implements Closeable {
         }, "IPCClient-Reader");
 
         if (debugMode) {
-            System.out.println("Starting IPCClient reading thread!");
+            LOGGER.info("[DEBUG] Starting IPCClient reading thread!");
         }
         readThread.start();
     }
@@ -500,12 +703,12 @@ public final class IPCClient implements Closeable {
 
     /**
      * Constants representing events that can be subscribed to
-     * using {@link #subscribe(Event)}.<p>
+     * using {@link #subscribe(Event)}.
      * <p>
      * Each event corresponds to a different function as a
      * component of the Rich Presence.<br>
      * A full breakdown of each is available
-     * <a href=https://discordapp.com/developers/docs/rich-presence/how-to>here</a>.
+     * <a href=https://discord.com/developers/docs/rich-presence/how-to>here</a>.
      */
     public enum Event {
         NULL(false), // used for confirmation

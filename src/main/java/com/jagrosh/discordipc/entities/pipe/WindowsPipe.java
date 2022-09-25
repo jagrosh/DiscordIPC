@@ -16,21 +16,26 @@
 
 package com.jagrosh.discordipc.entities.pipe;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.jagrosh.discordipc.IPCClient;
 import com.jagrosh.discordipc.entities.Callback;
 import com.jagrosh.discordipc.entities.Packet;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.jagrosh.discordipc.impl.WinRegistry;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
 
 public class WindowsPipe extends Pipe {
+    private static final Float javaSpec = Float.parseFloat(System.getProperty("java.specification.version"));
+    private final int targetKey = WinRegistry.HKEY_CURRENT_USER;
+    private final long targetLongKey = targetKey;
     public RandomAccessFile file;
 
-    WindowsPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, String location) {
+    WindowsPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, File location) {
         super(ipcClient, callbacks);
         try {
             this.file = new RandomAccessFile(location, "rw");
@@ -45,6 +50,7 @@ public class WindowsPipe extends Pipe {
     }
 
     @Override
+    @SuppressWarnings("BusyWait")
     public Packet read() throws IOException, JsonParseException {
         while ((status == PipeStatus.CONNECTED || status == PipeStatus.CLOSING) && file.length() == 0) {
             try {
@@ -65,29 +71,92 @@ public class WindowsPipe extends Pipe {
 
         file.readFully(d);
 
-        JsonObject packetData = new JsonObject();
-        packetData.addProperty("", new String(d));
-        Packet p = new Packet(op, packetData, ipcClient.getEncoding());
-
-        if (ipcClient.isDebugMode()) {
-            System.out.println(String.format("Received packet: %s", p.toString()));
-        }
-
-        if (listener != null)
-            listener.onPacketReceived(ipcClient, p);
-        return p;
+        return receive(op, d);
     }
 
     @Override
     public void close() throws IOException {
         if (ipcClient.isDebugMode()) {
-            System.out.println("Closing IPC pipe...");
+            ipcClient.getLogger().info("[DEBUG] Closing IPC pipe...");
         }
 
         status = PipeStatus.CLOSING;
-        send(Packet.OpCode.CLOSE, new JsonObject(), null);
+        send(Packet.OpCode.CLOSE, new JsonObject());
         status = PipeStatus.CLOSED;
         file.close();
+    }
+
+    @SuppressWarnings("DuplicatedCode")
+    @Override
+    public void registerApp(String applicationId, String command) {
+        String javaLibraryPath = System.getProperty("java.home");
+        File javaExeFile = new File(javaLibraryPath.split(";")[0] + "/bin/java.exe");
+        File javawExeFile = new File(javaLibraryPath.split(";")[0] + "/bin/javaw.exe");
+        String javaExePath = javaExeFile.exists() ? javaExeFile.getAbsolutePath() : javawExeFile.exists() ? javawExeFile.getAbsolutePath() : null;
+
+        if (javaExePath == null)
+            throw new RuntimeException("Unable to find java path");
+
+        String openCommand;
+
+        if (command != null)
+            openCommand = command;
+        else
+            openCommand = javaExePath;
+
+        String protocolName = "discord-" + applicationId;
+        String protocolDescription = "URL:Run game " + applicationId + " protocol";
+        String keyName = "Software\\Classes\\" + protocolName;
+        String iconKeyName = keyName + "\\DefaultIcon";
+        String commandKeyName = keyName + "\\DefaultIcon";
+
+        try {
+            if (javaSpec >= 11) {
+                WinRegistry.createKey(targetLongKey, keyName);
+                WinRegistry.writeStringValue(targetLongKey, keyName, "", protocolDescription);
+                WinRegistry.writeStringValue(targetLongKey, keyName, "URL Protocol", "\0");
+
+                WinRegistry.createKey(targetLongKey, iconKeyName);
+                WinRegistry.writeStringValue(targetLongKey, iconKeyName, "", javaExePath);
+
+                WinRegistry.createKey(targetLongKey, commandKeyName);
+                WinRegistry.writeStringValue(targetLongKey, commandKeyName, "", openCommand);
+            } else {
+                WinRegistry.createKey(targetKey, keyName);
+                WinRegistry.writeStringValue(targetKey, keyName, "", protocolDescription);
+                WinRegistry.writeStringValue(targetKey, keyName, "URL Protocol", "\0");
+
+                WinRegistry.createKey(targetKey, iconKeyName);
+                WinRegistry.writeStringValue(targetKey, iconKeyName, "", javaExePath);
+
+                WinRegistry.createKey(targetKey, commandKeyName);
+                WinRegistry.writeStringValue(targetKey, commandKeyName, "", openCommand);
+            }
+        } catch (Exception | Error ex) {
+            throw new RuntimeException("Unable to modify Discord registry keys", ex);
+        }
+    }
+
+    @Override
+    public void registerSteamGame(String applicationId, String steamId) {
+        try {
+            String steamPath;
+            if (javaSpec >= 11) {
+                steamPath = WinRegistry.readString(targetLongKey, "Software\\\\Valve\\\\Steam", "SteamExe");
+            } else {
+                steamPath = WinRegistry.readString(targetKey, "Software\\\\Valve\\\\Steam", "SteamExe");
+            }
+            if (steamPath == null)
+                throw new RuntimeException("Steam exe path not found");
+
+            steamPath = steamPath.replaceAll("/", "\\");
+
+            String command = "\"" + steamPath + "\" steam://rungameid/" + steamId;
+
+            this.registerApp(applicationId, command);
+        } catch (Exception ex) {
+            throw new RuntimeException("Unable to register Steam game", ex);
+        }
     }
 
 }
