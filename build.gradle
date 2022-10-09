@@ -39,6 +39,7 @@ jar.manifest.mainAttributes([
 
 shadowJar {
     archiveClassifier.set('')
+    exclude 'META-INF/versions/**'
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
