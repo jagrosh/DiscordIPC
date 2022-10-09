@@ -30,6 +30,9 @@ dependencies {
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.36'
     implementation group: 'com.kohlschutter.junixsocket', name: 'junixsocket-common', version: '2.4.0'
     implementation group: 'com.kohlschutter.junixsocket', name: 'junixsocket-native-common', version: '2.4.0'
+
+    // SLF4J Test Bindings
+    runtimeOnly group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.36'
 }
 
 jar.manifest.mainAttributes([
