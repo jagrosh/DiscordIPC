@@ -1,19 +1,31 @@
-#General
-/repo
-/.gradle
-/build
+# Compiled class file
+*.class
 
-#Eclipse
-.settings
-.metadata
-.classpath
-.project
-/bin
+# Log file
+*.log
 
-#IntelliJ Idea
-/out
-/.idea
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# Intellij Project Files
+/.idea/
+/out/
 *.iml
-*.iws
-*.ipr
-s101plugin.state
+
+# Testing
+/src/test/
+/target/
