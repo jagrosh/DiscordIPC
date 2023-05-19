@@ -26,10 +26,10 @@ import org.newsclub.net.unix.AFUNIXSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.Paths;
 import java.util.HashMap;
 
 public class UnixPipe extends Pipe
@@ -43,7 +43,7 @@ public class UnixPipe extends Pipe
         super(ipcClient, callbacks);
 
         socket = AFUNIXSocket.newInstance();
-        socket.connect(new AFUNIXSocketAddress(new File(location)));
+        socket.connect(AFUNIXSocketAddress.of(Paths.get(location)));
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
