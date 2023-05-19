@@ -30,6 +30,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public abstract class Pipe {
 
@@ -58,13 +60,13 @@ public abstract class Pipe {
 
         // store some files so we can get the preferred client
         Pipe[] open = new Pipe[DiscordBuild.values().length];
-        for(int i = 0; i < 10; i++)
+        String osName = System.getProperty("os.name").toLowerCase();
+        for(String location : (Iterable<String>) getPipeLocations(osName)::iterator)
         {
             try
             {
-                String location = getPipeLocation(i);
                 LOGGER.debug(String.format("Searching for IPC: %s", location));
-                pipe = createPipe(ipcClient, callbacks, location);
+                pipe = createPipe(ipcClient, callbacks, osName, location);
 
                 pipe.send(Packet.OpCode.HANDSHAKE, new JSONObject().put("v", VERSION).put("client_id", Long.toString(clientId)), null);
 
@@ -150,22 +152,14 @@ public abstract class Pipe {
         return pipe;
     }
 
-    private static Pipe createPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, String location) {
-        String osName = System.getProperty("os.name").toLowerCase();
-
+    private static Pipe createPipe(IPCClient ipcClient, HashMap<String, Callback> callbacks, String osName, String location) throws IOException {
         if (osName.contains("win"))
         {
             return new WindowsPipe(ipcClient, callbacks, location);
         }
         else if (osName.contains("linux") || osName.contains("mac"))
         {
-            try {
-                return new UnixPipe(ipcClient, callbacks, location);
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
+            return new UnixPipe(ipcClient, callbacks, location);
         }
         else
         {
@@ -251,25 +245,30 @@ public abstract class Pipe {
     private final static String[] unixPaths = {"XDG_RUNTIME_DIR","TMPDIR","TMP","TEMP"};
 
     /**
-     * Finds the IPC location in the current system.
+     * Creates an IntStream with the range 0-10.
      *
-     * @param i Index to try getting the IPC at.
+     * @return The stream.
+     */
+    private static IntStream range() {
+        return IntStream.range(0, 10);
+    }
+
+    /**
+     * Finds the IPC location in the current system.
      *
      * @return The IPC location.
      */
-    private static String getPipeLocation(int i)
-    {
-        if(System.getProperty("os.name").contains("Win"))
-            return "\\\\?\\pipe\\discord-ipc-"+i;
-        String tmppath = null;
-        for(String str : unixPaths)
-        {
-            tmppath = System.getenv(str);
-            if(tmppath != null)
-                break;
-        }
-        if(tmppath == null)
-            tmppath = "/tmp";
-        return tmppath+"/discord-ipc-"+i;
+    private static Stream<String> getPipeLocations(String osName) {
+        if(osName.contains("win"))
+            return range().mapToObj(i -> "\\\\?\\pipe\\discord-ipc-" + i);
+
+        String tmppath = Stream.of(unixPaths).map(System::getenv).filter(path -> path != null).findFirst()
+                .orElse("/tmp");
+
+        Stream<String> unix = range().mapToObj(i -> tmppath + "/discord-ipc-" + i).limit(10);
+        if(osName.contains("linux"))
+            unix = Stream.concat(unix, range().mapToObj(i -> tmppath + "/app/com.discordapp.Discord/discord-ipc-" + i));
+
+        return unix;
     }
 }
