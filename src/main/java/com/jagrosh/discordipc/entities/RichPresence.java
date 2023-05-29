@@ -42,12 +42,17 @@ public class RichPresence
     private final String matchSecret;
     private final String joinSecret;
     private final String spectateSecret;
+    private final String button1Text;
+    private final String button1Url;
+    private final String button2Text;
+    private final String button2Url;
     private final boolean instance;
     
     public RichPresence(String state, String details, OffsetDateTime startTimestamp, OffsetDateTime endTimestamp, 
             String largeImageKey, String largeImageText, String smallImageKey, String smallImageText, 
             String partyId, int partySize, int partyMax, String matchSecret, String joinSecret, 
-            String spectateSecret, boolean instance)
+            String spectateSecret, String button1Text, String button1Url, String button2Text, String button2Url,
+            boolean instance)
     {
         this.state = state;
         this.details = details;
@@ -63,6 +68,10 @@ public class RichPresence
         this.matchSecret = matchSecret;
         this.joinSecret = joinSecret;
         this.spectateSecret = spectateSecret;
+        this.button1Text = button1Text;
+        this.button1Url = button1Url;
+        this.button2Text = button2Text;
+        this.button2Url = button2Url;
         this.instance = instance;
     }
 
@@ -77,6 +86,13 @@ public class RichPresence
      */
     public JSONObject toJson()
     {
+    	JSONArray buttons = new JSONArray();
+    	if(button1Text != null && button1Url != null) {
+    		buttons.put(new JSONObject().put("label", button1Text).put("url", button1Url));
+    	}
+    	if(button2Text != null && button2Url != null) {
+    		buttons.put(new JSONObject().put("label", button2Text).put("url", button2Url));
+    	}
         return new JSONObject()
                 .put("state", state)
                 .put("details", details)
@@ -95,6 +111,7 @@ public class RichPresence
                         .put("join", joinSecret)
                         .put("spectate", spectateSecret)
                         .put("match", matchSecret))
+                .put("buttons", buttons)
                 .put("instance", instance);
     }
 
@@ -120,6 +137,10 @@ public class RichPresence
         private String matchSecret;
         private String joinSecret;
         private String spectateSecret;
+	    private String button1Text;
+	    private String button1Url;
+	    private String button2Text;
+	    private String button2Url;
         private boolean instance;
 
         /**
@@ -132,7 +153,8 @@ public class RichPresence
             return new RichPresence(state, details, startTimestamp, endTimestamp, 
                     largeImageKey, largeImageText, smallImageKey, smallImageText, 
                     partyId, partySize, partyMax, matchSecret, joinSecret, 
-                    spectateSecret, instance);
+                    spectateSecret, button1Text, button1Url, button2Text, button2Url,
+                    instance);
         }
 
         /**
@@ -314,7 +336,37 @@ public class RichPresence
             this.spectateSecret = spectateSecret;
             return this;
         }
+       
+        /**
+         * Create and set a custom first button to the RichPresence
+         * 
+         * @param text The text displayed on the first button
+         * 
+         * @param url The redirected URL when someone click on the button
+         * 
+         * @return This Builder
+         */
+        public Builder setButton1(String text, String url) {
+        	this.button1Text = text;
+        	this.button1Url = url;
+        	return this;
+        }
 
+        /**
+         * Create and set a custom second button to the RichPresence
+         * 
+         * @param text The text displayed on the second button
+         * 
+         * @param url The redirected URL when someone click on the button
+         * 
+         * @return This Builder
+         */
+        public Builder setButton2(String text, String url) {
+        	this.button2Text = text;
+        	this.button2Url = url;
+        	return this;
+        }
+        
         /**
          * Marks the {@link #setMatchSecret(String) matchSecret} as a game
          * session with a specific beginning and end.

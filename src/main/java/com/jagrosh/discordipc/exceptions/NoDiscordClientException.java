@@ -29,5 +29,5 @@ import com.jagrosh.discordipc.entities.DiscordBuild;
  */
 public class NoDiscordClientException extends Exception
 {
-    
+
 }
