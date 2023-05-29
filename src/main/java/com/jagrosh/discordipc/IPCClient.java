@@ -375,8 +375,9 @@ public final class IPCClient implements Closeable
                         case ACTIVITY_JOIN_REQUEST:
                             LOGGER.debug("Reading thread received a 'join request' event.");
                             break;
-                            
+                        
                         case UNKNOWN:
+                        default:
                             LOGGER.debug("Reading thread encountered an event with an unknown type: " +
                                          json.getString("evt"));
                             break;

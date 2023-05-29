@@ -29,3 +29,8 @@ hs_err_pid*
 # Testing
 /src/test/
 /target/
+
+# Eclipse generated files
+.classpath
+.project
+.settings/
