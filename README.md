@@ -1,6 +1,6 @@
-[version]: https://api.bintray.com/packages/jagrosh/maven/DiscordIPC/images/download.svg
-[download]: https://bintray.com/jagrosh/maven/DiscordIPC/_latestVersion
-[license]: https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg
+[version]: https://jitpack.io/v/jagrosh/DiscordIPC.svg?style=flat-square
+[download]: https://jitpack.io/#jagrosh/DiscordIPC/-SNAPSHOT
+[license]: https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg?style=flat-square
 
 [ ![version][] ][download]
 [ ![license][] ](https://github.com/jagrosh/DiscordIPC/tree/master/LICENSE)
@@ -29,11 +29,12 @@ First you'll need to add this project as a dependency. If you're using maven:
   </dependency>
 ```
 ```xml
-  <repository>
-    <id>central</id>
-    <name>bintray</name>
-    <url>http://jcenter.bintray.com</url>
-  </repository>
+  <repositories>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
+  </repositories>
 ```
 With gradle:
 ```groovy
@@ -42,7 +43,7 @@ dependencies {
 }
 
 repositories {
-    jcenter()
+    maven { url 'https://jitpack.io' }
 }
 ```
 
@@ -65,6 +66,7 @@ client.setListener(new IPCListener(){
             .setMatchSecret("xyzzy")
             .setJoinSecret("join")
             .setSpectateSecret("look");
+            .setButton1("Hello, world!", "https://google.com")
         client.sendRichPresence(builder.build());
     }
 });
