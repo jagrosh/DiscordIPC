@@ -702,7 +702,7 @@ public final class IPCClient implements Closeable {
                                             u.getAsJsonPrimitive("username").getAsString(),
                                             u.getAsJsonPrimitive("discriminator").getAsString(),
                                             Long.parseLong(u.getAsJsonPrimitive("id").getAsString()),
-                                            u.has("avatar") ? u.getAsJsonPrimitive("avatar").getAsString() : null
+                                            u.has("avatar") && u.get("avatar").isJsonPrimitive() ? u.getAsJsonPrimitive("avatar").getAsString() : null
                                     );
                                     listener.onActivityJoinRequest(instance, data.has("secret") ? data.getAsJsonObject("secret").getAsString() : null, user);
                                     break;
