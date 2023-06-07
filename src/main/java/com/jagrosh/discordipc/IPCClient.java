@@ -505,7 +505,7 @@ public final class IPCClient implements Closeable {
             }
 
             JsonObject pipeData = new JsonObject();
-            pipeData.addProperty("cmd", approvalMode == ApprovalMode.ACCEPT ? "SEND_ACTIVITY_JOIN_INVITE" : "CLOSE_ACTIVITY_REQUEST");
+            pipeData.addProperty("cmd", approvalMode == ApprovalMode.ACCEPT ? "SEND_ACTIVITY_JOIN_INVITE" : "CLOSE_ACTIVITY_JOIN_REQUEST");
 
             JsonObject args = new JsonObject();
             args.addProperty("user_id", user.getId());
