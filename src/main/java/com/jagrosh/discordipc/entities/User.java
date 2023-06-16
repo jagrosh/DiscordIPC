@@ -111,7 +111,7 @@ public class User {
      * @return The Users {@link DefaultAvatar} avatar ID.
      */
     public String getDefaultAvatarId() {
-        return DefaultAvatar.values()[Integer.parseInt(getDiscriminator()) % DefaultAvatar.values().length].toString();
+        return DefaultAvatar.values()[(getDiscriminator().equals("0") ? (int) getIdLong() >> 22 : Integer.parseInt(getDiscriminator())) % DefaultAvatar.values().length].toString();
     }
 
     /**
