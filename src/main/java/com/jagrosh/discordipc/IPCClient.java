@@ -58,13 +58,15 @@ public final class IPCClient implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(IPCClient.class);
     private Logger FORCED_LOGGER = null;
     private final long clientId;
-    private final boolean debugMode, verboseLogging, autoRegister;
+    private final boolean autoRegister;
     private final HashMap<String, Callback> callbacks = new HashMap<>();
     private final String applicationId, optionalSteamId;
     private volatile Pipe pipe;
     private IPCListener listener = null;
     private Thread readThread = null;
     private String encoding = "UTF-8";
+    private boolean debugMode;
+    private boolean verboseLogging;
 
     /**
      * Constructs a new IPCClient using the provided {@code clientId}.<br>
@@ -317,13 +319,31 @@ public final class IPCClient implements Closeable {
     }
 
     /**
+     * Sets whether this IPCClient is in Debug Mode
+     *
+     * @param debugMode The Debug Mode Status
+     */
+    public void setDebugMode(boolean debugMode) {
+        this.debugMode = debugMode;
+    }
+
+    /**
      * Gets whether this IPCClient will show verbose logging
      * Default: False
      *
-     * @return The Debug Mode Status
+     * @return The Verbose Logging Status
      */
     public boolean isVerboseLogging() {
         return verboseLogging;
+    }
+
+    /**
+     * Sets whether this IPCClient will show verbose logging
+     *
+     * @param verboseLogging The Verbose Mode Status
+     */
+    public void setVerboseLogging(boolean verboseLogging) {
+        this.verboseLogging = verboseLogging;
     }
 
     /**
@@ -623,6 +643,7 @@ public final class IPCClient implements Closeable {
                 IPCClient.this.readPipe(localInstance);
             }
         }, "IPCClient-Reader");
+        readThread.setDaemon(true);
 
         if (debugMode) {
             getCurrentLogger(LOGGER).info("[DEBUG] Starting IPCClient reading thread!");
