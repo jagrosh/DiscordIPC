@@ -23,6 +23,7 @@ import com.jagrosh.discordipc.entities.Packet.OpCode;
 import com.jagrosh.discordipc.entities.pipe.Pipe;
 import com.jagrosh.discordipc.entities.pipe.PipeStatus;
 import com.jagrosh.discordipc.exceptions.NoDiscordClientException;
+import com.jagrosh.discordipc.impl.Backoff;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,15 +57,17 @@ import java.util.HashMap;
  */
 public final class IPCClient implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(IPCClient.class);
-    private Logger FORCED_LOGGER = null;
+    private final Backoff RECONNECT_TIME_MS = new Backoff(500, 60 * 1000);
     private final long clientId;
     private final boolean autoRegister;
     private final HashMap<String, Callback> callbacks = new HashMap<>();
     private final String applicationId, optionalSteamId;
     private volatile Pipe pipe;
+    private Logger forcedLogger = null;
     private IPCListener listener = null;
     private Thread readThread = null;
     private String encoding = "UTF-8";
+    private long nextDelay = 0L;
     private boolean debugMode;
     private boolean verboseLogging;
 
@@ -213,7 +216,7 @@ public final class IPCClient implements Closeable {
      * @return the current logger to use
      */
     public Logger getCurrentLogger(final Logger instance) {
-        return FORCED_LOGGER != null ? FORCED_LOGGER : instance;
+        return forcedLogger != null ? forcedLogger : instance;
     }
 
     /**
@@ -222,7 +225,7 @@ public final class IPCClient implements Closeable {
      * @param forcedLogger The logger instance to be used
      */
     public void setForcedLogger(Logger forcedLogger) {
-        FORCED_LOGGER = forcedLogger;
+        this.forcedLogger = forcedLogger;
     }
 
     /**
@@ -356,12 +359,24 @@ public final class IPCClient implements Closeable {
      * @throws IllegalStateException    There is an open connection on this IPCClient.
      * @throws NoDiscordClientException No client of the provided {@link DiscordBuild build type}(s) was found.
      */
-    public void connect(DiscordBuild... preferredOrder) throws NoDiscordClientException {
+    public void connect(DiscordBuild... preferredOrder) throws NoDiscordClientException, InterruptedException {
         checkConnected(false);
+        long timeToConnect;
+        while ((timeToConnect = nextDelay - System.currentTimeMillis()) > 0) {
+            if (debugMode) {
+                getCurrentLogger(LOGGER).info("[DEBUG] Attempting connection in: " + timeToConnect + "ms");
+            }
+            Thread.sleep(timeToConnect);
+        }
         callbacks.clear();
         pipe = null;
 
-        pipe = Pipe.openPipe(this, clientId, callbacks, preferredOrder);
+        try {
+            pipe = Pipe.openPipe(this, clientId, callbacks, preferredOrder);
+        } catch (Exception ex) {
+            updateReconnectTime();
+            throw ex;
+        }
 
         if (isAutoRegister()) {
             try {
@@ -743,12 +758,20 @@ public final class IPCClient implements Closeable {
             getCurrentLogger(LOGGER).error(String.format("Reading thread encountered an Exception: %s", ex));
 
             pipe.setStatus(PipeStatus.DISCONNECTED);
-            if (listener != null)
+            if (listener != null) {
+                RECONNECT_TIME_MS.reset();
+                updateReconnectTime();
                 listener.onDisconnect(instance, ex);
+            }
         }
     }
 
-    // Private static methods
+    /**
+     * Sets the next delay before re-attempting connection.
+     */
+    private void updateReconnectTime() {
+        nextDelay = System.currentTimeMillis() + RECONNECT_TIME_MS.nextDelay();
+    }
 
     /**
      * Constants representing a Response to an Ask to Join or Spectate Request
