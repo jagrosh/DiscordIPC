@@ -29,7 +29,8 @@ import com.jagrosh.discordipc.impl.ExtendedLong;
  * @author John Grosh (john.a.grosh@gmail.com)
  */
 public class User {
-    private final String name;
+    private final String username;
+    private final String nickname;
     private final String discriminator;
     private final long id;
     private final String avatar;
@@ -38,13 +39,15 @@ public class User {
      * Constructs a new {@link User}.<br>
      * Only implemented internally.
      *
-     * @param name          user's name
+     * @param username      user's name
+     * @param nickname      user's nickname
      * @param discriminator user's discriminator
      * @param id            user's id
      * @param avatar        user's avatar hash, or {@code null} if they have no avatar
      */
-    public User(String name, String discriminator, long id, String avatar) {
-        this.name = name;
+    public User(String username, String nickname, String discriminator, long id, String avatar) {
+        this.username = username;
+        this.nickname = nickname;
         this.discriminator = discriminator;
         this.id = id;
         this.avatar = avatar;
@@ -56,7 +59,26 @@ public class User {
      * @return The Users account name.
      */
     public String getName() {
-        return name;
+        return username;
+    }
+
+    /**
+     * Gets the Users nickname, if any.
+     *
+     * @return The Users nickname.
+     */
+    public String getNickname() {
+        return nickname;
+    }
+
+    /**
+     * Gets the Users nickname, or their account name if they
+     * do not have a custom nickname set on their account.
+     *
+     * @return The Users effective name.
+     */
+    public String getEffectiveName() {
+        return nickname == null ? username : nickname;
     }
 
     /**
