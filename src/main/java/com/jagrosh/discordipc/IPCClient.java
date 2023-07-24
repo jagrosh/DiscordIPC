@@ -736,8 +736,8 @@ public final class IPCClient implements Closeable {
                                     final JsonObject u = data.getAsJsonObject("user");
                                     final User user = new User(
                                             u.getAsJsonPrimitive("username").getAsString(),
-                                            u.has("global_name") ? u.getAsJsonPrimitive("global_name").getAsString() : null,
-                                            u.has("discriminator") ? u.getAsJsonPrimitive("discriminator").getAsString() : "0",
+                                            u.has("global_name") && u.get("global_name").isJsonPrimitive() ? u.getAsJsonPrimitive("global_name").getAsString() : null,
+                                            u.has("discriminator") && u.get("discriminator").isJsonPrimitive() ? u.getAsJsonPrimitive("discriminator").getAsString() : "0",
                                             Long.parseLong(u.getAsJsonPrimitive("id").getAsString()),
                                             u.has("avatar") && u.get("avatar").isJsonPrimitive() ? u.getAsJsonPrimitive("avatar").getAsString() : null
                                     );

@@ -96,8 +96,8 @@ public abstract class Pipe {
 
                         pipe.currentUser = new User(
                                 userData.getAsJsonPrimitive("username").getAsString(),
-                                userData.has("global_name") ? userData.getAsJsonPrimitive("global_name").getAsString() : null,
-                                userData.has("discriminator") ? userData.getAsJsonPrimitive("discriminator").getAsString() : "0",
+                                userData.has("global_name") && userData.get("global_name").isJsonPrimitive() ? userData.getAsJsonPrimitive("global_name").getAsString() : null,
+                                userData.has("discriminator") && userData.get("discriminator").isJsonPrimitive() ? userData.getAsJsonPrimitive("discriminator").getAsString() : "0",
                                 Long.parseLong(userData.getAsJsonPrimitive("id").getAsString()),
                                 userData.has("avatar") && userData.get("avatar").isJsonPrimitive() ? userData.getAsJsonPrimitive("avatar").getAsString() : null
                         );
