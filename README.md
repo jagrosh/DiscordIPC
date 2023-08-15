@@ -32,7 +32,7 @@ First you'll need to add this project as a dependency. If you're using maven:
   <repository>
     <id>central</id>
     <name>bintray</name>
-    <url>http://jcenter.bintray.com</url>
+    <url>https://jcenter.bintray.com</url>
   </repository>
 ```
 With gradle:
