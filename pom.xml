@@ -3,29 +3,24 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.jagrosh</groupId>
     <artifactId>DiscordIPC</artifactId>
-    <version>0.4</version>
+    <version>0.6</version>
     <packaging>jar</packaging>
     
     <dependencies>
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20230227</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>2.0.7</version>
+            <version>20240303</version>
         </dependency>
         <dependency>
             <groupId>com.kohlschutter.junixsocket</groupId>
             <artifactId>junixsocket-common</artifactId>
-            <version>2.6.2</version>
+            <version>${junixsocket.version}</version>
         </dependency>
         <dependency>
             <groupId>com.kohlschutter.junixsocket</groupId>
             <artifactId>junixsocket-native-common</artifactId>
-            <version>2.6.2</version>
+            <version>${junixsocket.version}</version>
         </dependency>
     </dependencies>
     
@@ -62,6 +57,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <junixsocket.version>2.9.0</junixsocket.version>
     </properties>
     <name>DiscordIPC</name>
 </project>
