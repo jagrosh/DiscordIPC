@@ -42,6 +42,7 @@ public class WindowsPipe extends Pipe
         try {
             this.file = new RandomAccessFile(location, "rw");
         } catch (FileNotFoundException e) {
+            LOGGER.error("Couldn't open IPCPipe. If you are using Java 22 or higher you might need to choose a lower version than Java 22.")
             throw new RuntimeException(e);
         }
     }
