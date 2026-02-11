@@ -13,29 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.jagrosh.discordipc.entities;
+
+import com.jagrosh.discordipc.IPCClient;
 
 import java.util.function.Consumer;
 
 /**
  * A callback for asynchronous logic when dealing processes that
- * would normally block the calling thread.<p>
- *
- * This is most visibly implemented in {@link com.jagrosh.discordipc.IPCClient IPCClient}.
+ * would normally block the calling thread.
+ * <p>
+ * This is most visibly implemented in {@link IPCClient IPCClient}.
  *
  * @author John Grosh (john.a.grosh@gmail.com)
  */
-public class Callback
-{
+public class Callback {
     private final Consumer<Packet> success;
     private final Consumer<String> failure;
 
     /**
      * Constructs an empty Callback.
      */
-    public Callback()
-    {
-        this((Consumer<Packet>) null, null);
+    public Callback() {
+        this(null, null);
     }
 
     /**
@@ -45,8 +46,7 @@ public class Callback
      *
      * @param success The Consumer to launch after a successful process.
      */
-    public Callback(Consumer<Packet> success)
-    {
+    public Callback(Consumer<Packet> success) {
         this(success, null);
     }
 
@@ -58,52 +58,32 @@ public class Callback
      * @param success The Consumer to launch after a successful process.
      * @param failure The Consumer to launch if the process has an error.
      */
-    public Callback(Consumer<Packet> success, Consumer<String> failure)
-    {
+    public Callback(Consumer<Packet> success, Consumer<String> failure) {
         this.success = success;
         this.failure = failure;
     }
 
     /**
-     * @param success The Runnable to launch after a successful process.
-     * @param failure The Consumer to launch if the process has an error.
-     */
-    @Deprecated
-    public Callback(Runnable success, Consumer<String> failure)
-    {
-        this(p -> success.run(), failure);
-    }
-
-    /**
-     * @param success The Runnable to launch after a successful process.
-     */
-    @Deprecated
-    public Callback(Runnable success)
-    {
-        this(p -> success.run(), null);
-    }
-
-    /**
-     * Gets whether or not this Callback is "empty" which is more precisely
+     * Gets whether this Callback is "empty" which is more precisely
      * defined as not having a specified success {@link Consumer} and/or a
      * failure {@link Consumer}.<br>
      * This is only true if the Callback is constructed with the parameter-less
      * constructor ({@link #Callback()}) or another constructor that leaves
      * one or both parameters {@code null}.
      *
-     * @return {@code true} if and only if the
+     * @return {@code true} if and only if the Callback is "empty"
      */
-    public boolean isEmpty()
-    {
+    public boolean isEmpty() {
         return success == null && failure == null;
     }
 
     /**
      * Launches the success {@link Consumer}.
+     *
+     * @param packet The packet to execute after success
      */
-    public void succeed(Packet packet)
-    {
-        if(success != null)
+    public void succeed(Packet packet) {
+        if (success != null)
             success.accept(packet);
     }
 
@@ -113,9 +93,8 @@ public class Callback
      *
      * @param message The message to launch the failure consumer with.
      */
-    public void fail(String message)
-    {
-        if(failure != null)
+    public void fail(String message) {
+        if (failure != null)
             failure.accept(message);
     }
 }
